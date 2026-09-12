@@ -109,19 +109,35 @@ migration (`drizzle/0001`).
 
 ```
 src/
+  proxy.ts      Optimistic auth redirect (Next 16's renamed middleware)
   app/
-    (public)/   Discovery, listings, city & university landing pages  [M2]
-    (host)/     Host portal                                          [M5]
-    (crm)/      RM desk                                              [M3]
-    (admin)/    Ops, verification, funnel, MIS                       [M1/M5]
+    admin/      Ops console — inventory, verification, stale queue   [M1]
+    host/       Host portal                                          [M5]
+    crm/        RM desk                                              [M3]
+    (public)/   Discovery, listings, city & university landing pages [M2]
+  components/
+    ui/         Badges for listing state, verification tier, freshness
   lib/
-    db/         Drizzle schema (32 tables), client, migrations
+    db/         Drizzle schema (32 tables), client, migrations, seed
     money/      Currency representation and arithmetic
     geo/        PostGIS proximity search
     state-machines/  Listing, lead, booking, verification lifecycles
-    auth/       RBAC permission model
+    auth/       RBAC model, sessions, password hashing, route guards
+    audit/      Append-only audit trail
+    services/   Data access — the only place that mutates domain rows
+    taxonomy/   Amenity and house-rule vocabularies
     env.ts      Validated environment
 ```
+
+**Authorization lives in `lib/auth/guard.ts`, not in `proxy.ts`.** The proxy only
+checks that a session cookie exists, so an unauthenticated visitor gets a
+redirect instead of an empty screen. Next.js is explicit that proxy must not be
+a session or authorization solution, and a cookie's presence says nothing about
+whether it is valid, revoked, or belongs to a disabled account.
+
+**Mutations go through `lib/services`, never straight from a page.** That is what
+guarantees the state machine is enforced, an audit entry is written, and
+`updatedAt` is set — a page writing directly gets none of those.
 
 ## Invariants worth knowing before you change code
 

@@ -14,8 +14,13 @@ import { z } from 'zod';
  *    a feature actually needs the credential.
  *
  * 2. **Server secrets are never exported to the client.** Only `NEXT_PUBLIC_*`
- *    values live in `clientEnv`. Next.js inlines `NEXT_PUBLIC_*` at build time;
- *    everything else is server-only and referenced lazily.
+ *    values live in `clientEnv()`. Next.js inlines `NEXT_PUBLIC_*` at build
+ *    time; everything else is server-only.
+ *
+ * Both accessors are functions rather than constants so that importing a module
+ * which transitively reaches this file never throws on load. Parsing at module
+ * scope makes unrelated pure code — and any script or job that does not need a
+ * database — fail for want of a Supabase URL.
  */
 
 const nodeEnv = z.enum(['development', 'test', 'production']);
@@ -32,8 +37,40 @@ const postgresUrl = z
     message: 'must be a postgres:// or postgresql:// connection string',
   });
 
+/**
+ * An optional variable where **empty string means absent**.
+ *
+ * This matters because `.env` files have no way to express "unset": a key left
+ * as `RAZORPAY_KEY_ID=""` is present with an empty value, so a plain
+ * `.optional()` does not apply and `.min(1)` fails. Since the whole point of
+ * the vendor variables is that they are blank until procurement finishes, and
+ * `.env.example` ships them blank, every optional field has to normalise empty
+ * to undefined or the documented template cannot start the app.
+ */
+function optional<T extends z.ZodType>(schema: T) {
+  return z.preprocess(
+    (value) => (value === '' || value === undefined ? undefined : value),
+    schema.optional(),
+  );
+}
+
+/**
+ * Same normalisation for a field that has a `.default()`.
+ *
+ * Needed for exactly the same reason: `TELEPHONY_PROVIDER=""` is present, so
+ * the default never applies and the empty string is validated against the enum
+ * — which fails. Blanking a variable is a realistic thing for a developer to
+ * do, and it should mean "use the default", not "crash".
+ */
+function blankable<T extends z.ZodType>(schema: T) {
+  return z.preprocess(
+    (value) => (value === '' || value === undefined ? undefined : value),
+    schema,
+  );
+}
+
 const serverSchema = z.object({
-  NODE_ENV: nodeEnv.default('development'),
+  NODE_ENV: blankable(nodeEnv.default('development')),
 
   // --- Database -----------------------------------------------------------
   /**
@@ -47,7 +84,7 @@ const serverSchema = z.object({
    * session pooler; DDL and advisory locks do not work over the transaction
    * pooler. Falls back to DATABASE_URL for local Postgres where they're equal.
    */
-  DATABASE_URL_DIRECT: postgresUrl.optional(),
+  DATABASE_URL_DIRECT: optional(postgresUrl),
 
   // --- Supabase -----------------------------------------------------------
   /**
@@ -55,83 +92,85 @@ const serverSchema = z.object({
    * Security, so it must never reach the browser. Only needed for Storage
    * operations and admin tasks; optional until we wire media upload in M1.
    */
-  SUPABASE_SECRET_KEY: z.string().min(1).optional(),
+  SUPABASE_SECRET_KEY: optional(z.string().min(1)),
 
   // --- Auth ---------------------------------------------------------------
   /** Session/JWT signing secret. Generate with `openssl rand -base64 32`. */
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
-  AUTH_URL: z.url().optional(),
+  AUTH_URL: optional(z.url()),
 
   // --- Vendors (optional until procured — see requireVendor) --------------
-  RAZORPAY_KEY_ID: z.string().min(1).optional(),
-  RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
-  RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+  RAZORPAY_KEY_ID: optional(z.string().min(1)),
+  RAZORPAY_KEY_SECRET: optional(z.string().min(1)),
+  RAZORPAY_WEBHOOK_SECRET: optional(z.string().min(1)),
 
   /** Exotel or Ozonetel — click-to-call, number masking, recording (FR-12). */
-  TELEPHONY_PROVIDER: z.enum(['exotel', 'ozonetel', 'none']).default('none'),
-  TELEPHONY_API_KEY: z.string().min(1).optional(),
-  TELEPHONY_API_TOKEN: z.string().min(1).optional(),
-  TELEPHONY_ACCOUNT_SID: z.string().min(1).optional(),
-  TELEPHONY_CALLER_ID: z.string().min(1).optional(),
-  TELEPHONY_WEBHOOK_SECRET: z.string().min(1).optional(),
+  TELEPHONY_PROVIDER: blankable(z.enum(['exotel', 'ozonetel', 'none']).default('none')),
+  TELEPHONY_API_KEY: optional(z.string().min(1)),
+  TELEPHONY_API_TOKEN: optional(z.string().min(1)),
+  TELEPHONY_ACCOUNT_SID: optional(z.string().min(1)),
+  TELEPHONY_CALLER_ID: optional(z.string().min(1)),
+  TELEPHONY_WEBHOOK_SECRET: optional(z.string().min(1)),
 
   /** WhatsApp Business via a BSP (AiSensy / Interakt / Gupshup). */
-  WHATSAPP_PROVIDER: z.enum(['aisensy', 'interakt', 'gupshup', 'none']).default('none'),
-  WHATSAPP_API_KEY: z.string().min(1).optional(),
-  WHATSAPP_PHONE_NUMBER_ID: z.string().min(1).optional(),
-  WHATSAPP_WEBHOOK_SECRET: z.string().min(1).optional(),
+  WHATSAPP_PROVIDER: blankable(
+    z.enum(['aisensy', 'interakt', 'gupshup', 'none']).default('none'),
+  ),
+  WHATSAPP_API_KEY: optional(z.string().min(1)),
+  WHATSAPP_PHONE_NUMBER_ID: optional(z.string().min(1)),
+  WHATSAPP_WEBHOOK_SECRET: optional(z.string().min(1)),
 
   /** Transactional SMS + OTP (MSG91 or equivalent Indian aggregator). */
-  SMS_PROVIDER: z.enum(['msg91', 'none']).default('none'),
-  SMS_API_KEY: z.string().min(1).optional(),
-  SMS_OTP_TEMPLATE_ID: z.string().min(1).optional(),
-  SMS_SENDER_ID: z.string().min(1).optional(),
+  SMS_PROVIDER: blankable(z.enum(['msg91', 'none']).default('none')),
+  SMS_API_KEY: optional(z.string().min(1)),
+  SMS_OTP_TEMPLATE_ID: optional(z.string().min(1)),
+  SMS_SENDER_ID: optional(z.string().min(1)),
 
-  EMAIL_PROVIDER: z.enum(['resend', 'ses', 'none']).default('none'),
-  EMAIL_API_KEY: z.string().min(1).optional(),
-  EMAIL_FROM: z.string().min(1).optional(),
+  EMAIL_PROVIDER: blankable(z.enum(['resend', 'ses', 'none']).default('none')),
+  EMAIL_API_KEY: optional(z.string().min(1)),
+  EMAIL_FROM: optional(z.string().min(1)),
 
   /** Durable SLA timers and notification fan-out. */
-  INNGEST_EVENT_KEY: z.string().min(1).optional(),
-  INNGEST_SIGNING_KEY: z.string().min(1).optional(),
+  INNGEST_EVENT_KEY: optional(z.string().min(1)),
+  INNGEST_SIGNING_KEY: optional(z.string().min(1)),
 
-  SENTRY_DSN: z.string().min(1).optional(),
+  SENTRY_DSN: optional(z.string().min(1)),
 
   // --- Compliance / business config ---------------------------------------
   /**
    * Our own GSTIN, required on every tax invoice we issue (build plan concern
    * #6). Optional in dev; M4 invoice generation refuses to run without it.
    */
-  COMPANY_GSTIN: z
-    .string()
-    .regex(
-      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
-      'not a valid 15-character GSTIN',
-    )
-    .optional(),
+  COMPANY_GSTIN: optional(
+    z
+      .string()
+      .regex(
+        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+        'not a valid 15-character GSTIN',
+      ),
+  ),
   /** State code of our place of supply, deciding CGST+SGST vs IGST. */
-  COMPANY_STATE_CODE: z
-    .string()
-    .regex(/^[0-9]{2}$/)
-    .optional(),
+  COMPANY_STATE_CODE: optional(
+    z.string().regex(/^[0-9]{2}$/, 'must be a 2-digit GST state code'),
+  ),
 
   /**
    * Policy version stamped onto every consent record. Bump it whenever the
    * privacy notice changes, so we never retroactively claim consent under terms
    * the user never saw (DPDP).
    */
-  PRIVACY_POLICY_VERSION: z.string().min(1).default('2026-09-01'),
+  PRIVACY_POLICY_VERSION: blankable(z.string().min(1).default('2026-09-01')),
 });
 
 const clientSchema = z.object({
-  NEXT_PUBLIC_SITE_URL: z.url().default('http://localhost:3000'),
+  NEXT_PUBLIC_SITE_URL: blankable(z.url().default('http://localhost:3000')),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   /**
    * Supabase publishable (anon) key. Public by design — it is protected by Row
    * Level Security, not by secrecy. Never put the `service_role` key here.
    */
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
-  NEXT_PUBLIC_GA4_MEASUREMENT_ID: z.string().optional(),
+  NEXT_PUBLIC_GA4_MEASUREMENT_ID: optional(z.string().min(1)),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
@@ -154,22 +193,35 @@ function parseOrThrow<T extends z.ZodType>(schema: T, source: unknown, label: st
   return result.data as z.infer<T>;
 }
 
+let cachedClientEnv: ClientEnv | null = null;
+
 /**
- * Client env is parsed eagerly from inlined literals. These must be written as
- * explicit `process.env.NEXT_PUBLIC_*` member expressions — Next.js replaces
- * them at build time and cannot see a dynamic lookup.
+ * Client env, parsed lazily and memoised.
+ *
+ * Lazy matters more than it looks. Parsing at module scope means *any* import
+ * chain that transitively reaches this file throws when the variables are
+ * absent — which made pure helpers in modules that merely sit next to a
+ * database import untestable, and would fail a script or a job that has no
+ * business needing a Supabase URL.
+ *
+ * The `process.env.NEXT_PUBLIC_*` reads must stay written as explicit member
+ * expressions: Next.js substitutes them at build time and cannot see a dynamic
+ * lookup. Being inside a function body does not prevent that substitution.
  */
-export const clientEnv: ClientEnv = parseOrThrow(
-  clientSchema,
-  {
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    NEXT_PUBLIC_GA4_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
-  },
-  'client',
-);
+export function clientEnv(): ClientEnv {
+  cachedClientEnv ??= parseOrThrow(
+    clientSchema,
+    {
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      NEXT_PUBLIC_GA4_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
+    },
+    'client',
+  );
+  return cachedClientEnv;
+}
 
 let cachedServerEnv: ServerEnv | null = null;
 
