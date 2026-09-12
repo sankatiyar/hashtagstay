@@ -1,1 +1,165 @@
-# hashtagstay
+# #HashtagStay
+
+Digital-first aggregator for co-living and student housing. The operating model
+is **digital discovery + human closure**: SEO/SEM brings demand in, and a
+tele-sales / relationship-management desk converts it over the phone.
+
+The platform does not own or operate inventory. It aggregates supply from
+co-living operators, PBSA (purpose-built student accommodation) operators and
+individual hosts, and earns a facilitation fee from residents plus commission
+from operators.
+
+Product requirements: [`docs/HashtagStay_PRD.docx`](docs/HashtagStay_PRD.docx).
+
+## Status
+
+Phase 1 / M0 — foundations complete. Schema and core primitives are in place;
+migrations are generated but not yet applied. No UI beyond the scaffold yet.
+
+| Milestone | Scope | State |
+|---|---|---|
+| M0 | Foundations, schema, money/geo/state-machine/RBAC primitives | done |
+| M1 | Inventory + internal ops console | next |
+| M2 | Public discovery, SEO, lead capture | |
+| M3 | RM desk: routing, SLA timers, masked calling, shortlists | |
+| M4 | Booking, fee engine, payments, GST invoicing | |
+| M5 | Host portal + admin reporting | |
+| M6 | Hardening + soft launch | |
+
+## Stack
+
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind 4 ·
+Drizzle ORM · Supabase Postgres with PostGIS · Vitest
+
+Telephony (Exotel/Ozonetel), WhatsApp (BSP), payments (Razorpay) and SMS/OTP
+(MSG91) are integrated behind adapters and are **pending procurement** — see
+[`docs/vendors.md`](docs/vendors.md). The app builds and runs without them; a
+feature needing an unconfigured vendor throws a named error at the point of use.
+
+## Getting started
+
+Requires Node.js 20.9+ (built and tested on 24).
+
+```bash
+npm install
+cp .env.example .env.local   # then fill in the values it documents
+npm run db:migrate
+npm run dev
+```
+
+`db:migrate` enables PostGIS, `pg_trgm` and `pgcrypto`, then applies the
+migrations in `drizzle/`.
+
+### Connection strings
+
+Supabase exposes two, and they are not interchangeable:
+
+- `DATABASE_URL` — the **transaction pooler** (port 6543) for app runtime.
+  Prepared statements are disabled for it in `src/lib/db/index.ts`; leaving them
+  on causes intermittent `prepared statement "s1" already exists` errors that
+  look like random flakes.
+- `DATABASE_URL_DIRECT` — the **direct connection** (port 5432) for migrations.
+  DDL and the advisory locks that serialise migrations do not work through the
+  transaction pooler.
+
+## Scripts
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run verify` | typecheck + lint + tests (run before pushing) |
+| `npm test` | Unit tests |
+| `npm run db:generate` | Generate a migration from schema changes |
+| `npm run db:migrate` | Apply migrations |
+| `npm run db:studio` | Browse the database |
+
+Use `db:migrate`, not `db:push`. Push diffs the live database and applies what
+it infers, which is fine for a scratch database and unacceptable against
+anything holding real bookings. It would also revert the hand-written SRID
+migration (`drizzle/0001`).
+
+## Layout
+
+```
+src/
+  app/
+    (public)/   Discovery, listings, city & university landing pages  [M2]
+    (host)/     Host portal                                          [M5]
+    (crm)/      RM desk                                              [M3]
+    (admin)/    Ops, verification, funnel, MIS                       [M1/M5]
+  lib/
+    db/         Drizzle schema (32 tables), client, migrations
+    money/      Currency representation and arithmetic
+    geo/        PostGIS proximity search
+    state-machines/  Listing, lead, booking, verification lifecycles
+    auth/       RBAC permission model
+    env.ts      Validated environment
+```
+
+## Invariants worth knowing before you change code
+
+These are enforced by tests, and a few of them are the difference between a
+trustworthy aggregator and a broken one.
+
+**Money is never a float.** Every amount is an integer count of minor units
+plus an ISO-4217 code. `src/lib/money` is the only place currency is
+represented or arithmeticked. Percentage fees use banker's rounding so they do
+not accumulate an upward bias across thousands of bookings, and allocation
+helpers never lose or invent a minor unit.
+
+**A booking cannot be charged before the host confirms.** There is no path from
+`initiated` to `fee_pending`; every booking passes through
+`pending_host_confirmation`. Availability is *advisory* — small operators do not
+keep calendars current — so charging first is how an aggregator sells a filled
+room, which is the fastest way to destroy the trust the product is built on.
+
+**A listing cannot go live without verification.** `draft → live` does not
+exist. Leaving suspension also requires re-verification rather than a direct
+un-suspend.
+
+**Whoever submits a listing cannot certify it.** The `verifier` role cannot
+create or edit properties, `ops` cannot approve verification, and even a user
+holding both roles is refused approval on a listing they submitted. `super_admin`
+deliberately lacks `verification:approve`: the badge is a claim made to
+residents about a third party's property, not an internal setting.
+
+**Lead attribution is written at insert.** UTM parameters, `gclid`, `fbclid`,
+referrer and landing page cannot be reconstructed later, and every acquisition
+metric depends on them.
+
+**Fees are snapshotted onto bookings.** Editing a fee rule never rewrites the
+economics of a booking already made. Rates are integer basis points.
+
+**Proximity queries must cast to geography.** Point columns are
+`geometry(Point,4326)`, where distance is in *degrees*. A query missing the
+`::geography` cast still returns plausible-but-wrong rows. Always go through
+`src/lib/geo`, which also uses `ST_DWithin` rather than `ST_Distance(...) < n`
+so the GiST index is actually used.
+
+**Webhook idempotency lives in the schema.** `webhook_events` has a unique
+`(provider, provider_event_id)`; providers redeliver, and "process once" cannot
+depend on handler timing.
+
+## Compliance notes
+
+Not optional extras — these shape the schema.
+
+- **GST.** Charging an Indian resident a fee obliges us to issue a tax invoice
+  with a gapless serial series per financial year. Numbering cannot be
+  retrofitted. Refunds reverse via credit note; an issued invoice is never
+  edited or deleted.
+- **DPDP Act.** Consent is recorded per purpose, append-only, stamped with a
+  policy version so a later policy change cannot retroactively claim consent.
+  Under-18 enquirers require guardian consent (§9) — a recurring case in student
+  housing, not an edge case. Call recording requires a disclosed announcement.
+- **Audit trail.** Bulk PII export, refunds, fee-rule edits, role grants and
+  recording playback always write an audit entry.
+
+## Notes for contributors
+
+`AGENTS.md` is written and re-added by `next dev`. This Next.js version differs
+from Next 15 in ways that matter: middleware is now `proxy.ts` (Node runtime
+only), request APIs (`cookies`, `headers`, `params`, `searchParams`) are
+await-only, and `revalidateTag` requires a cacheLife profile. Read the bundled
+docs in `node_modules/next/dist/docs/` before writing framework code.

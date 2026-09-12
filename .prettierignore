@@ -1,0 +1,6 @@
+node_modules
+.next
+drizzle
+public
+*.md
+package-lock.json
