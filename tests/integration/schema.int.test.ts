@@ -94,6 +94,32 @@ describe('geometry columns', () => {
     ).rejects.toThrow();
   });
 
+  it('coerces a drizzle-native point insert to the column SRID', async () => {
+    // Drizzle's geometry mapToDriverValue emits `point(x y)` with no SRID.
+    // PostGIS coerces that to the column's declared SRID on insert, so an
+    // ORM-native write lands as 4326 with the axes the right way round.
+    //
+    // This is why migration 0001 does double duty: without the 4326 typmod the
+    // same insert would store SRID 0 and every ::geography cast would throw at
+    // runtime. Do not "simplify" that migration away.
+    await db.insert(schema.institutions).values({
+      name: 'Drizzle Native',
+      slug: `drizzle-native-${SUFFIX}`,
+      city: 'Bengaluru',
+      location: { x: IISC.lng, y: IISC.lat },
+    });
+
+    const rows = await client<{ srid: number; lng: number; lat: number }[]>`
+      SELECT ST_SRID(location) AS srid,
+             ST_X(location)::float8 AS lng,
+             ST_Y(location)::float8 AS lat
+      FROM institutions WHERE slug = ${`drizzle-native-${SUFFIX}`}
+    `;
+    expect(rows[0].srid).toBe(4326);
+    expect(rows[0].lng).toBeCloseTo(IISC.lng, 4);
+    expect(rows[0].lat).toBeCloseTo(IISC.lat, 4);
+  });
+
   it('has a GiST index on each point column', async () => {
     const rows = await client<{ indexname: string }[]>`
       SELECT indexname FROM pg_indexes
