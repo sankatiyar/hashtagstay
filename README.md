@@ -42,7 +42,8 @@ Requires Node.js 20.9+ (built and tested on 24).
 
 ```bash
 npm install
-cp .env.example .env.local   # then fill in the values it documents
+cp .env.example .env.local
+npm run db:local:start   # local PostGIS cluster on port 5433
 npm run db:migrate
 npm run dev
 ```
@@ -50,9 +51,32 @@ npm run dev
 `db:migrate` enables PostGIS, `pg_trgm` and `pgcrypto`, then applies the
 migrations in `drizzle/`.
 
-### Connection strings
+### The database
 
-Supabase exposes two, and they are not interchangeable:
+Development runs against a **local** PostGIS cluster, not Supabase. That keeps
+the edit loop fast, avoids burning cloud connection limits on hot reloads, and
+matches what CI runs against.
+
+`npm run db:local:start` handles it. It needs Postgres binaries — either point
+`PGSQL_HOME` at an extracted [PostgreSQL zip](https://www.enterprisedb.com/download-postgresql-binaries)
+with the [PostGIS bundle](https://download.osgeo.org/postgis/windows/pg17/)
+merged over it (no admin install required on Windows), or skip the script
+entirely and use Docker:
+
+```bash
+docker run -d --name hashtagstay-db -p 5433:5432 \
+  -e POSTGRES_PASSWORD=hashtagstay_local_dev -e POSTGRES_DB=hashtagstay \
+  postgis/postgis:17-3.5
+```
+
+Other commands: `db:local:stop`, `db:local:status`, `db:local:reset` (drops and
+recreates), `db:local:psql`.
+
+### Pointing at Supabase instead
+
+`.env.local` carries the Supabase connection strings commented out. Fill in the
+password and swap them in. Supabase exposes two, and they are **not**
+interchangeable:
 
 - `DATABASE_URL` — the **transaction pooler** (port 6543) for app runtime.
   Prepared statements are disabled for it in `src/lib/db/index.ts`; leaving them
@@ -70,6 +94,8 @@ Supabase exposes two, and they are not interchangeable:
 | `npm run build` | Production build |
 | `npm run verify` | typecheck + lint + tests (run before pushing) |
 | `npm test` | Unit tests |
+| `npm run test:int` | Integration tests — needs a running database |
+| `npm run db:local:start` | Start the local PostGIS cluster |
 | `npm run db:generate` | Generate a migration from schema changes |
 | `npm run db:migrate` | Apply migrations |
 | `npm run db:studio` | Browse the database |

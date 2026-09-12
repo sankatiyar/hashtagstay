@@ -116,6 +116,13 @@ jobs:
         # the database have diverged.
         run: npm run db:migrate
 
+      - name: Integration tests
+        # Asserts what unit tests structurally cannot: SRID 4326 is enforced,
+        # distance comes back in metres rather than degrees, coordinates survive
+        # a round trip without transposing, webhook idempotency is enforced by a
+        # constraint, and ON DELETE RESTRICT protects inventory.
+        run: npm run test:int
+
       - name: Assert schema drift is committed
         # `db:generate` after a clean checkout must produce nothing. A diff here
         # means someone changed the schema without generating the migration.
