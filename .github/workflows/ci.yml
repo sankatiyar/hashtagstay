@@ -36,9 +36,9 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # Matches the `engines.node` floor in package.json; Next 16 requires
           # 20.9+.
@@ -77,7 +77,11 @@ jobs:
     # the dropped SRID.
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        # Keep the major version aligned with local development (PostgreSQL 17)
+        # and with the Docker command in the README. CI proving migrations on a
+        # different major version than anyone develops against is a gap, not a
+        # safety net.
+        image: postgis/postgis:17-3.5
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -98,9 +102,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
