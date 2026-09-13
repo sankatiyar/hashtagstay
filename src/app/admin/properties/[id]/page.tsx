@@ -27,7 +27,7 @@ export default async function PropertyDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  const user = await requirePermission('property:edit', {
+  const user = await requirePermission('property:view', {
     returnTo: `/admin/properties/${id}`,
   });
 
@@ -211,6 +211,20 @@ export default async function PropertyDetailPage(props: {
         </div>
 
         <div className="space-y-6">
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="text-sm font-semibold text-slate-900">Verification</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              The checklist decides the tier, and every grant expires. Whoever entered
+              this property cannot be the one to certify it.
+            </p>
+            <Link
+              href={`/admin/properties/${property.id}/verify`}
+              className="mt-3 inline-block rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              Open verification review
+            </Link>
+          </section>
+
           <section className="rounded-xl border border-slate-200 bg-white p-5">
             <h2 className="text-sm font-semibold text-slate-900">Lifecycle</h2>
             <p className="mt-1 text-xs text-slate-500">

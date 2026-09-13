@@ -30,7 +30,7 @@ export default async function PropertiesPage(props: {
     page?: string;
   }>;
 }) {
-  await requirePermission('property:edit', { returnTo: '/admin/properties' });
+  await requirePermission('property:view', { returnTo: '/admin/properties' });
 
   const params = await props.searchParams;
 

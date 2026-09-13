@@ -19,7 +19,7 @@ export const metadata = {
  * someone discover it as an error.
  */
 export default async function VerificationQueuePage() {
-  const user = await requirePermission('property:edit', {
+  const user = await requirePermission('property:view', {
     returnTo: '/admin/verification',
   });
 
@@ -113,9 +113,15 @@ export default async function VerificationQueuePage() {
                           {row.roomTypeCount === 1 ? 'type' : 'types'}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         <VerificationBadge tier={row.verificationTier} />
                         <ListingStateBadge state={row.listingState} />
+                        <Link
+                          href={`/admin/properties/${row.id}/verify`}
+                          className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                          Review
+                        </Link>
                       </div>
                     </li>
                   ))}

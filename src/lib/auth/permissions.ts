@@ -26,6 +26,13 @@ export const PERMISSIONS = [
   'organization:create',
   'organization:edit',
   'organization:suspend',
+  /**
+   * Read inventory. Separate from `property:edit` because several roles need to
+   * look without touching: a verifier must see a property to certify it but
+   * must not be able to change it, and an RM must see inventory to build a
+   * shortlist. Gating read pages on `property:edit` locked both of them out.
+   */
+  'property:view',
   'property:create',
   'property:edit',
   'property:submit_for_verification',
@@ -85,6 +92,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 const RM: readonly Permission[] = [
+  'property:view',
   'lead:view_assigned',
   'lead:edit',
   'lead:disqualify',
@@ -112,6 +120,7 @@ const RM_LEAD: readonly Permission[] = [
 ];
 
 const OPS: readonly Permission[] = [
+  'property:view',
   'organization:create',
   'organization:edit',
   'property:create',
@@ -133,6 +142,7 @@ const OPS: readonly Permission[] = [
  * The role exists to certify inventory it did not enter.
  */
 const VERIFIER: readonly Permission[] = [
+  'property:view',
   'verification:review',
   'verification:approve',
   /**
@@ -149,6 +159,7 @@ const VERIFIER: readonly Permission[] = [
 ];
 
 const FINANCE: readonly Permission[] = [
+  'property:view',
   'payment:view',
   'payment:refund',
   'invoice:issue',
@@ -180,6 +191,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<StaffRole, readonly Permission[]>
 /** Host-side permissions, always scoped to one organization. */
 export const ORG_ROLE_PERMISSIONS: Readonly<Record<OrgRole, readonly Permission[]>> = {
   owner: [
+    'property:view',
     'property:create',
     'property:edit',
     'property:submit_for_verification',
@@ -190,13 +202,14 @@ export const ORG_ROLE_PERMISSIONS: Readonly<Record<OrgRole, readonly Permission[
     'report:view',
   ],
   manager: [
+    'property:view',
     'property:edit',
     'property:submit_for_verification',
     'availability:edit',
     'media:upload',
     'report:view',
   ],
-  viewer: ['report:view'],
+  viewer: ['property:view', 'report:view'],
 };
 
 export class PermissionDeniedError extends Error {

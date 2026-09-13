@@ -168,6 +168,14 @@ export const properties = pgTable(
     listingState: listingStateEnum().notNull().default('draft'),
     publishedAt: tsColumn(),
 
+    /**
+     * Who entered this property. Needed for separation of duties: the person
+     * who created or submitted a listing must not be the person who certifies
+     * it, and that check needs an identity to compare against rather than a
+     * scan of the audit log.
+     */
+    createdByUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+
     verificationTier: verificationTierEnum().notNull().default('none'),
     verifiedAt: tsColumn(),
     /** Verification expires; a badge from 2026 must not still show in 2029. */
@@ -342,6 +350,13 @@ export const verifications = pgTable(
     requestedTier: verificationTierEnum().notNull(),
     grantedTier: verificationTierEnum(),
     state: verificationStateEnum().notNull().default('pending'),
+
+    /**
+     * Who asked for this verification. Compared against the reviewer so a
+     * listing cannot be certified by the person who submitted it — a badge
+     * signed by its own author is not a trust signal.
+     */
+    requestedByUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
 
     /**
      * Checklist outcome, one entry per rubric item, e.g.

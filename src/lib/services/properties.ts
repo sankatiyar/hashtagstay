@@ -330,6 +330,9 @@ export async function createProperty(
         // Always starts as a draft. Nothing reaches residents without passing
         // verification, and the listing machine has no draft -> live edge.
         listingState: 'draft',
+        // Recorded so separation of duties has an identity to compare against:
+        // whoever entered a property must not be the one to certify it.
+        createdByUserId: actor.id,
         lastReviewedAt: new Date(),
       })
       .returning({ id: properties.id, slug: properties.slug });

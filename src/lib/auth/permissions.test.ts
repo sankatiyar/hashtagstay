@@ -95,6 +95,22 @@ describe('least privilege per role', () => {
     expect(can(['verifier'], 'property:edit')).toBe(false);
   });
 
+  it('lets every inventory-touching role READ inventory', () => {
+    // Regression: read pages were gated on `property:edit`, which a verifier
+    // deliberately lacks — so the only role that can approve a property could
+    // not open one, and an RM could not see the inventory they shortlist from.
+    for (const role of ['rm', 'rm_lead', 'ops', 'verifier', 'finance'] as StaffRole[]) {
+      expect(can([role], 'property:view'), `${role} must be able to view`).toBe(true);
+    }
+  });
+
+  it('separates viewing inventory from editing it', () => {
+    expect(can(['verifier'], 'property:view')).toBe(true);
+    expect(can(['verifier'], 'property:edit')).toBe(false);
+    expect(can(['rm'], 'property:view')).toBe(true);
+    expect(can(['rm'], 'property:edit')).toBe(false);
+  });
+
   it('a verifier can publish, because approval is what takes a listing live', () => {
     // The listing machine reaches `live` only from `in_verification`, so
     // separating approve from publish would strand approved inventory.
