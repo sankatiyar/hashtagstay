@@ -5,7 +5,7 @@ import { requirePermission } from '@/lib/auth/guard';
 import { listStaleInventory } from '@/lib/services/properties';
 
 export const metadata = {
-  title: 'Needs confirming · #HashtagStay ops',
+  title: 'Needs confirming · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

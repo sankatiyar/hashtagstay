@@ -6,7 +6,7 @@ import { requirePermission } from '@/lib/auth/guard';
 import { listTicketQueue, ticketCounts } from '@/lib/services/tickets';
 
 export const metadata = {
-  title: 'Support · #HashtagStay ops',
+  title: 'Support · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

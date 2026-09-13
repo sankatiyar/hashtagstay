@@ -177,9 +177,9 @@ async function dispatch(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: e.EMAIL_FROM ?? 'HashtagStay <no-reply@hashtagstay.example>',
+        from: e.EMAIL_FROM ?? 'Sandy Stays <no-reply@hashtagstay.example>',
         to: input.to,
-        subject: subject ?? 'HashtagStay',
+        subject: subject ?? 'Sandy Stays',
         text,
       }),
     });

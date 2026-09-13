@@ -11,7 +11,7 @@ import { listReviewsForModeration, moderateReview } from '@/lib/services/reviews
 import { revalidatePath } from 'next/cache';
 
 export const metadata = {
-  title: 'Reviews · #HashtagStay ops',
+  title: 'Reviews · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

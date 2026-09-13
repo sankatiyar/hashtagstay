@@ -9,7 +9,7 @@ import { getPropertyDetail } from '@/lib/services/properties';
 import { staffPhotoCommand, staffUploadDocument, staffUploadPhotos } from './actions';
 
 export const metadata = {
-  title: 'Photos and documents · #HashtagStay ops',
+  title: 'Photos and documents · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

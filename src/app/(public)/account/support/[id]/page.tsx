@@ -10,7 +10,7 @@ import { getTicket } from '@/lib/services/tickets';
 import { replyTicketAction } from '../../actions';
 
 export const metadata: Metadata = {
-  title: 'Request · HashtagStay',
+  title: 'Request · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -34,7 +34,7 @@ export default async function ResidentTicketPage(props: {
       </Link>
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-pine-950 text-3xl font-semibold tracking-tight">
+          <h1 className="font-display text-ink text-3xl font-semibold tracking-tight">
             {data.ticket.subject}
           </h1>
           <p className="text-ink-soft mt-1 text-sm">
@@ -54,11 +54,11 @@ export default async function ResidentTicketPage(props: {
               className={`flex ${staff ? 'justify-start' : 'justify-end'}`}
             >
               <div
-                className={`max-w-[85%] rounded-3xl px-5 py-4 text-sm ${staff ? 'border-line rounded-bl-md border bg-white' : 'bg-pine-800 rounded-br-md text-white'}`}
+                className={`max-w-[85%] rounded-3xl px-5 py-4 text-sm ${staff ? 'border-line rounded-bl-md border bg-white' : 'bg-brand-600 rounded-br-md text-white'}`}
               >
-                <p className={`text-xs ${staff ? 'text-ink-soft' : 'text-pine-200'}`}>
+                <p className={`text-xs ${staff ? 'text-ink-soft' : 'text-white/85'}`}>
                   {staff
-                    ? `HashtagStay${message.authorName ? ` · ${message.authorName.split(' ')[0]}` : ''}`
+                    ? `Sandy Stays${message.authorName ? ` · ${message.authorName.split(' ')[0]}` : ''}`
                     : 'You'}{' '}
                   · {message.createdAt.toISOString().slice(0, 16).replace('T', ' ')}
                 </p>

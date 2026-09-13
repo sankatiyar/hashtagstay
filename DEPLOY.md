@@ -1,4 +1,4 @@
-# Deploying HashtagStay (Supabase + Vercel)
+# Deploying Sandy Stays (Supabase + Vercel)
 
 This puts a working **demo** on a public Vercel URL, backed by the Supabase
 project `kzumobxtwgspfvyxwieq`. Demo mode runs the full resident, RM and host

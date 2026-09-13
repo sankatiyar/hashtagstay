@@ -10,7 +10,7 @@ import {
 import { moderatePhoto, pendingPhotoQueue } from '@/lib/services/media';
 
 export const metadata = {
-  title: 'Photos · #HashtagStay ops',
+  title: 'Photos · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

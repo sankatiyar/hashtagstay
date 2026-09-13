@@ -17,7 +17,7 @@ import { OpenVerificationForm } from './open-form';
 import { ReviewForm } from './review-form';
 
 export const metadata = {
-  title: 'Verify · #HashtagStay ops',
+  title: 'Verify · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

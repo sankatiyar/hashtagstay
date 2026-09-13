@@ -54,7 +54,7 @@ export function ResidentLoginForm({ next }: { next: string }) {
             Enter the code sent to <strong className="text-ink">{state.phone}</strong>.
           </p>
           {state.devCode && (
-            <p className="border-marigold-300 bg-marigold-50 text-marigold-700 rounded-xl border border-dashed px-4 py-3 text-sm">
+            <p className="border-peach-300 bg-peach-50 text-peach-700 rounded-xl border border-dashed px-4 py-3 text-sm">
               Demo mode — SMS isn’t connected, so your code is{' '}
               <strong className="tracking-widest">{state.devCode}</strong>.
             </p>
@@ -95,7 +95,7 @@ export function ResidentLoginForm({ next }: { next: string }) {
               name="intent"
               value="resend"
               disabled={pending}
-              className="text-pine-700 text-sm font-medium hover:underline"
+              className="text-brand-700 text-sm font-medium hover:underline"
             >
               New code
             </button>

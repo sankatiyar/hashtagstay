@@ -12,7 +12,7 @@ import { isoDate } from '@/lib/time';
 import { raiseTicketAction } from '../actions';
 
 export const metadata: Metadata = {
-  title: 'Help and safety · HashtagStay',
+  title: 'Help and safety · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -33,7 +33,7 @@ export default async function SupportPage() {
       >
         ← Your account
       </Link>
-      <h1 className="font-display text-pine-950 mt-3 text-4xl font-semibold tracking-tight">
+      <h1 className="font-display text-ink mt-3 text-4xl font-semibold tracking-tight">
         Help and safety
       </h1>
 

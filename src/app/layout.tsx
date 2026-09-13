@@ -23,16 +23,16 @@ export const metadata: Metadata = {
         : 'http://localhost:3000'),
   ),
   title: {
-    default: 'HashtagStay — Verified co-living and student housing',
+    default: 'Sandy Stays — Verified co-living and student housing',
     template: '%s',
   },
   description:
     'Verified co-living and student housing across India. Search by campus, budget and room type, and a relationship manager confirms availability before you pay anything.',
-  applicationName: 'HashtagStay',
+  applicationName: 'Sandy Stays',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#113d30',
+  themeColor: '#ea580c',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

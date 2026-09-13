@@ -19,7 +19,7 @@ import {
 import { isoDate } from '@/lib/time';
 
 export const metadata = {
-  title: 'Reports · #HashtagStay ops',
+  title: 'Reports · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

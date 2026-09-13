@@ -20,7 +20,7 @@ import { EnquiryForm } from './enquiry-form';
 export const metadata: Metadata = {
   title: pageTitle('Tell us what you need'),
   description:
-    'Share your city, budget and move-in date and a HashtagStay relationship manager will confirm availability with operators for you. Free to enquire.',
+    'Share your city, budget and move-in date and a Sandy Stays relationship manager will confirm availability with operators for you. Free to enquire.',
   alternates: { canonical: absoluteUrl('/enquiry') },
 };
 
@@ -59,7 +59,7 @@ export default async function EnquiryPage(props: {
       <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
         <div className="min-w-0">
           <p className="eyebrow">Free, no obligation</p>
-          <h1 className="font-display text-pine-950 mt-3 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+          <h1 className="font-display text-ink mt-3 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
             Tell us what you need
           </h1>
           <p className="text-ink-soft mt-4 max-w-2xl text-lg leading-relaxed">
@@ -69,8 +69,8 @@ export default async function EnquiryPage(props: {
           </p>
 
           {(listing || campus) && (
-            <div className="border-pine-200 bg-pine-50 text-pine-900 mt-6 inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
-              <span className="bg-pine-800 text-marigold-300 flex h-8 w-8 items-center justify-center rounded-xl">
+            <div className="border-brand-200 bg-brand-50 text-ink mt-6 inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
+              <span className="bg-brand-600 text-peach-100 flex h-8 w-8 items-center justify-center rounded-xl">
                 ✓
               </span>
               {listing ? (
@@ -105,8 +105,8 @@ export default async function EnquiryPage(props: {
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="bg-pine-900 rounded-3xl p-7 text-white">
-            <p className="text-marigold-300 text-xs font-semibold tracking-[0.14em] uppercase">
+          <div className="bg-brand-600 rounded-3xl p-7 text-white">
+            <p className="text-peach-100 text-xs font-semibold tracking-[0.14em] uppercase">
               What happens next
             </p>
             <ol className="mt-6 space-y-6">
@@ -118,14 +118,12 @@ export default async function EnquiryPage(props: {
                       className="absolute top-9 left-[15px] h-[calc(100%-12px)] w-px bg-white/15"
                     />
                   )}
-                  <span className="text-marigold-300 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold ring-1 ring-white/20">
+                  <span className="text-peach-100 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold ring-1 ring-white/20">
                     {index + 1}
                   </span>
                   <div>
                     <p className="font-semibold">{title}</p>
-                    <p className="text-pine-100/75 mt-1 text-sm leading-relaxed">
-                      {body}
-                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-white/85">{body}</p>
                   </div>
                 </li>
               ))}
@@ -135,7 +133,7 @@ export default async function EnquiryPage(props: {
             Already enquired?{' '}
             <Link
               href="/account"
-              className="text-pine-700 font-semibold hover:underline"
+              className="text-brand-700 font-semibold hover:underline"
             >
               Track it in your account
             </Link>

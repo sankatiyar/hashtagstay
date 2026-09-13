@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { SignOutButton } from './sign-out-button';
 
 export const metadata = {
-  title: 'Ops console · #HashtagStay',
+  title: 'Ops console · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -61,10 +61,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <Link href="/admin" className="flex items-center gap-2.5 whitespace-nowrap">
             <LogoMark className="h-8 w-8" />
-            <span className="font-display text-pine-900 text-lg font-semibold tracking-tight">
-              HashtagStay
+            <span className="font-display text-ink text-lg font-semibold tracking-tight">
+              Sandy Stays
             </span>
-            <span className="bg-pine-50 text-pine-700 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase">
+            <span className="bg-brand-50 text-brand-700 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase">
               Ops
             </span>
           </Link>
@@ -83,7 +83,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                     : 'no roles assigned'}
                 </span>
               </span>
-              <span className="bg-pine-800 text-marigold-300 flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold">
+              <span className="bg-brand-600 text-peach-100 flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold">
                 {initials}
               </span>
             </Link>
@@ -95,7 +95,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <Link
               key={item.href}
               href={item.href}
-              className="text-ink-soft hover:bg-pine-50 hover:text-pine-800 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition"
+              className="text-ink-soft hover:bg-brand-50 hover:text-brand-800 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition"
             >
               {item.label}
             </Link>

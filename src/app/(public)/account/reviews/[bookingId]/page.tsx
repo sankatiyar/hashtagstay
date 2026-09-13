@@ -9,7 +9,7 @@ import { reviewEligibility } from '@/lib/services/reviews';
 import { submitReviewAction } from '../../actions';
 
 export const metadata: Metadata = {
-  title: 'Review your stay · HashtagStay',
+  title: 'Review your stay · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -30,7 +30,7 @@ export default async function ReviewPage(props: {
       >
         ← Your account
       </Link>
-      <h1 className="font-display text-pine-950 mt-3 text-4xl font-semibold tracking-tight">
+      <h1 className="font-display text-ink mt-3 text-4xl font-semibold tracking-tight">
         Review your stay
       </h1>
       {!check.eligible ? (

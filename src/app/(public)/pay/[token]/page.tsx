@@ -11,7 +11,7 @@ import { isoDate } from '@/lib/time';
 import { payInTestMode } from './actions';
 
 export const metadata: Metadata = {
-  title: 'Pay facilitation fee · HashtagStay',
+  title: 'Pay facilitation fee · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -28,12 +28,12 @@ export default async function PayPage(props: { params: Promise<{ token: string }
   return (
     <main className="container-page max-w-4xl py-12">
       <p className="eyebrow">Booking {booking.reference}</p>
-      <h1 className="font-display text-pine-950 mt-2 text-4xl font-semibold tracking-tight">
+      <h1 className="font-display text-ink mt-2 text-4xl font-semibold tracking-tight">
         {paid ? 'Your booking is confirmed' : 'Secure your room'}
       </h1>
       {!paid && (
         <p className="text-ink-soft mt-3 max-w-2xl">
-          The operator has confirmed your bed. Pay HashtagStay’s booking fee to lock it
+          The operator has confirmed your bed. Pay Sandy Stays’s booking fee to lock it
           in — rent and deposit are paid to the operator directly.
         </p>
       )}
@@ -67,14 +67,14 @@ export default async function PayPage(props: { params: Promise<{ token: string }
               />
             </dl>
             <p className="text-ink-soft mt-4 text-xs">
-              Rent and deposit are paid directly to the operator, not to HashtagStay.
+              Rent and deposit are paid directly to the operator, not to Sandy Stays.
             </p>
           </div>
         </section>
 
         <section className="space-y-4">
           <div className="card p-6">
-            <h2 className="text-ink font-semibold">HashtagStay booking fee</h2>
+            <h2 className="text-ink font-semibold">Sandy Stays booking fee</h2>
             <dl className="mt-4 space-y-2 text-sm">
               <Line label="Fee" value={inr(gst.taxableMinor)} />
               {gst.supplyType === 'intra_state' ? (
@@ -102,12 +102,12 @@ export default async function PayPage(props: { params: Promise<{ token: string }
           </div>
 
           {paid ? (
-            <div className="bg-pine-800 rounded-3xl p-6 text-white">
+            <div className="bg-brand-600 rounded-3xl p-6 text-white">
               <p className="font-semibold">
                 {payment.state === 'captured' ? 'Paid' : 'Paid and since refunded'} on{' '}
                 {isoDate(payment.paidAt)}.
               </p>
-              <p className="text-pine-100/85 mt-2 text-sm">
+              <p className="mt-2 text-sm text-white/85">
                 Your relationship manager will share move-in details. A GST invoice has
                 been issued for this fee.
               </p>
@@ -116,7 +116,7 @@ export default async function PayPage(props: { params: Promise<{ token: string }
               </Link>
             </div>
           ) : payment.state === 'failed' ? (
-            <div className="bg-marigold-50 text-marigold-700 ring-marigold-200 rounded-3xl p-6 text-sm ring-1">
+            <div className="bg-peach-50 text-peach-700 ring-peach-200 rounded-3xl p-6 text-sm ring-1">
               This payment link is no longer active
               {payment.failureReason ? ` (${payment.failureReason.toLowerCase()})` : ''}
               . Ask your relationship manager to send a new one.
@@ -129,8 +129,8 @@ export default async function PayPage(props: { params: Promise<{ token: string }
               Pay {inr(payment.grossAmountMinor)} securely
             </a>
           ) : page.provider === 'test' ? (
-            <div className="border-marigold-300 bg-marigold-50 space-y-4 rounded-3xl border border-dashed p-6">
-              <p className="text-marigold-700 text-sm">
+            <div className="border-peach-300 bg-peach-50 space-y-4 rounded-3xl border border-dashed p-6">
+              <p className="text-peach-700 text-sm">
                 Demo mode — no payment provider is connected, so no money moves. This
                 runs the same confirmation, invoicing and notifications a real payment
                 would.

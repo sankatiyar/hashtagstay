@@ -76,14 +76,14 @@ export function EnquiryForm({
   if (state.step === 'done') {
     return (
       <div className="card overflow-hidden">
-        <div className="bg-pine-800 px-7 py-8 text-white">
-          <span className="bg-marigold-400 text-pine-950 flex h-12 w-12 items-center justify-center rounded-2xl text-xl">
+        <div className="bg-brand-600 px-7 py-8 text-white">
+          <span className="bg-peach-400 text-ink flex h-12 w-12 items-center justify-center rounded-2xl text-xl">
             ✓
           </span>
           <h2 className="font-display mt-5 text-3xl font-semibold">
             {state.merged ? 'Added to your open enquiry' : 'Enquiry received'}
           </h2>
-          <p className="text-pine-100/85 mt-2">
+          <p className="mt-2 text-white/85">
             Reference <strong className="text-white">{state.reference}</strong>
           </p>
         </div>
@@ -124,7 +124,7 @@ export function EnquiryForm({
         </div>
 
         {state.devCode && (
-          <p className="border-marigold-300 bg-marigold-50 text-marigold-700 rounded-xl border border-dashed px-4 py-3 text-sm">
+          <p className="border-peach-300 bg-peach-50 text-peach-700 rounded-xl border border-dashed px-4 py-3 text-sm">
             Demo mode — SMS isn’t connected yet, so your code is{' '}
             <strong className="tracking-widest">{state.devCode}</strong>.
           </p>
@@ -157,7 +157,7 @@ export function EnquiryForm({
             name="intent"
             value="resend"
             disabled={pending}
-            className="text-pine-700 text-sm font-medium hover:underline"
+            className="text-brand-700 text-sm font-medium hover:underline"
           >
             Send a new code
           </button>
@@ -233,14 +233,14 @@ export function EnquiryForm({
             name="isUnder18"
             checked={under18}
             onChange={(event) => setUnder18(event.target.checked)}
-            className="border-line accent-pine-700 mt-0.5 h-4 w-4 rounded"
+            className="border-line accent-brand-700 mt-0.5 h-4 w-4 rounded"
           />
           I am under 18
         </label>
 
         {under18 && (
-          <div className="border-marigold-200 bg-marigold-50 grid gap-5 rounded-2xl border p-5 sm:grid-cols-2">
-            <p className="text-marigold-700 text-sm sm:col-span-2">
+          <div className="border-peach-200 bg-peach-50 grid gap-5 rounded-2xl border p-5 sm:grid-cols-2">
+            <p className="text-peach-700 text-sm sm:col-span-2">
               Indian data protection law needs a parent or guardian’s consent for anyone
               under 18. We’ll contact them rather than you.
             </p>
@@ -383,7 +383,7 @@ export function EnquiryForm({
             type="checkbox"
             name="consentContact"
             defaultChecked={values.consentContact === 'on'}
-            className="border-line accent-pine-700 mt-0.5 h-4 w-4 rounded"
+            className="border-line accent-brand-700 mt-0.5 h-4 w-4 rounded"
           />
           <span>{contactNotice}</span>
         </label>
@@ -394,7 +394,7 @@ export function EnquiryForm({
             type="checkbox"
             name="consentMarketing"
             defaultChecked={values.consentMarketing === 'on'}
-            className="border-line accent-pine-700 mt-0.5 h-4 w-4 rounded"
+            className="border-line accent-brand-700 mt-0.5 h-4 w-4 rounded"
           />
           <span>Send me new stays and offers (optional).</span>
         </label>

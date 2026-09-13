@@ -94,7 +94,7 @@ export function HostSignupForm() {
       </div>
       <label className="flex items-start gap-2 text-sm text-slate-700">
         <input type="checkbox" name="terms" className="mt-0.5 h-4 w-4" />I confirm I
-        have the right to let these rooms, and I agree that HashtagStay verifies
+        have the right to let these rooms, and I agree that Sandy Stays verifies
         listings before they go live and charges a commission on bookings it brings.
       </label>
       {state.error && (

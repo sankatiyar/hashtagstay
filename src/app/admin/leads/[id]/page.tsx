@@ -37,7 +37,7 @@ import {
 } from './actions';
 
 export const metadata = {
-  title: 'Lead · #HashtagStay ops',
+  title: 'Lead · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

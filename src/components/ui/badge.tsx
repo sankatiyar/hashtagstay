@@ -4,8 +4,8 @@ type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
 
 const TONE_CLASSES: Record<Tone, string> = {
   neutral: 'bg-sand text-ink ring-line',
-  success: 'bg-pine-50 text-pine-700 ring-pine-200',
-  warning: 'bg-marigold-50 text-marigold-700 ring-marigold-200',
+  success: 'bg-brand-50 text-brand-700 ring-brand-200',
+  warning: 'bg-peach-50 text-peach-700 ring-peach-200',
   danger: 'bg-red-50 text-red-700 ring-red-200',
   info: 'bg-sky-50 text-sky-800 ring-sky-200',
   muted: 'bg-white text-ink-soft ring-line',

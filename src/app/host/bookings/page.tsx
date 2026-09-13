@@ -17,7 +17,7 @@ export default async function HostBookingsPage() {
           Bookings
         </h1>
         <p className="text-sm text-slate-500">
-          Residents pay rent and deposit to you directly. HashtagStay’s commission
+          Residents pay rent and deposit to you directly. Sandy Stays’s commission
           appears on your monthly statement.
         </p>
       </div>

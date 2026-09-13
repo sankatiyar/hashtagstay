@@ -26,13 +26,13 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
   {
     key: 'otp.verify',
     channels: ['sms'],
-    body: 'Your HashtagStay verification code is {{code}}. It expires in 10 minutes. Never share this code with anyone, including our staff.',
+    body: 'Your Sandy Stays verification code is {{code}}. It expires in 10 minutes. Never share this code with anyone, including our staff.',
     sensitive: ['code'],
   },
   {
     key: 'lead.acknowledgement',
     channels: ['whatsapp', 'sms'],
-    body: 'Hi {{name}}, thanks for your enquiry ({{reference}}). A HashtagStay relationship manager will call you {{when}}. Reply to this message if you need us sooner.',
+    body: 'Hi {{name}}, thanks for your enquiry ({{reference}}). A Sandy Stays relationship manager will call you {{when}}. Reply to this message if you need us sooner.',
   },
   {
     key: 'shortlist.shared',
@@ -48,7 +48,7 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
   {
     key: 'booking.payment_link',
     channels: ['whatsapp', 'sms'],
-    body: 'Hi {{name}}, {{property}} has confirmed your room. Pay the HashtagStay facilitation fee of {{amount}} to secure it: {{url}}',
+    body: 'Hi {{name}}, {{property}} has confirmed your room. Pay the Sandy Stays facilitation fee of {{amount}} to secure it: {{url}}',
   },
   {
     key: 'booking.confirmed_resident',
@@ -72,7 +72,7 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
     key: 'ticket.update',
     channels: ['sms', 'email'],
     subject: 'Update on your request {{reference}}',
-    body: 'There is an update on your HashtagStay request {{reference}}: {{summary}} View it here: {{url}}',
+    body: 'There is an update on your Sandy Stays request {{reference}}: {{summary}} View it here: {{url}}',
   },
 ];
 

@@ -7,7 +7,7 @@ import { getCurrentResident } from '@/lib/auth/resident';
 import { ResidentLoginForm } from './login-form';
 
 export const metadata: Metadata = {
-  title: 'Sign in · HashtagStay',
+  title: 'Sign in · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -22,7 +22,7 @@ export default async function ResidentLoginPage(props: {
       <div className="w-full max-w-md">
         <div className="card p-8">
           <LogoMark className="h-11 w-11" />
-          <h1 className="font-display text-pine-950 mt-6 text-3xl font-semibold tracking-tight">
+          <h1 className="font-display text-ink mt-6 text-3xl font-semibold tracking-tight">
             Sign in
           </h1>
           <p className="text-ink-soft mt-2">

@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { hostSignOut } from './actions';
 
 export const metadata = {
-  title: 'Host portal · HashtagStay',
+  title: 'Host portal · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -30,10 +30,10 @@ export default async function HostLayout({ children }: { children: ReactNode }) 
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link href="/host" className="flex items-center gap-2.5">
             <LogoMark className="h-8 w-8" />
-            <span className="font-display text-pine-900 text-lg font-semibold tracking-tight">
-              HashtagStay
+            <span className="font-display text-ink text-lg font-semibold tracking-tight">
+              Sandy Stays
             </span>
-            <span className="bg-marigold-100 text-marigold-700 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase">
+            <span className="bg-peach-100 text-peach-700 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase">
               Host
             </span>
           </Link>
@@ -42,7 +42,7 @@ export default async function HostLayout({ children }: { children: ReactNode }) 
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-ink-soft hover:bg-pine-50 hover:text-pine-800 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition"
+                className="text-ink-soft hover:bg-brand-50 hover:text-brand-800 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition"
               >
                 {item.label}
               </Link>

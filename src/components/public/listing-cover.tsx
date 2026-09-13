@@ -9,13 +9,12 @@
  */
 
 const PALETTES: readonly [sky: string, skyEnd: string, building: string, light: string][] = [
-  ['#1a5f49', '#0d3026', '#07201a', '#f6bd54'],
-  ['#3b4f7a', '#1f2a44', '#141b2e', '#fad68e'],
-  ['#b0643f', '#6e3a24', '#3c1f14', '#fdebc8'],
-  ['#2b6e72', '#123b3f', '#0a2426', '#f2a93b'],
-  ['#6a5a9c', '#2e2a4f', '#1b1832', '#f6bd54'],
-  ['#c28a3a', '#7a4f1d', '#3d2710', '#fff8eb'],
+  ['#fdba74', '#f97316', '#7c2d12', '#fff3e8'],
+  ['#fed7aa', '#fb923c', '#9a3412', '#ffffff'],
+  ['#ffd0a8', '#f2842f', '#7c2d12', '#ffe4cc'],
+  ['#fb923c', '#ea580c', '#431407', '#fed7aa'],
 ];
+
 
 function hash(input: string): number {
   let h = 2166136261;

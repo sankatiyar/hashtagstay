@@ -16,7 +16,7 @@ import { isoDate } from '@/lib/time';
 import { residentSignOut } from './actions';
 
 export const metadata: Metadata = {
-  title: 'Your account · HashtagStay',
+  title: 'Your account · Sandy Stays',
   robots: { index: false, follow: false },
 };
 
@@ -71,7 +71,7 @@ export default async function AccountPage() {
         <div className="container-page flex flex-wrap items-end justify-between gap-4 py-10">
           <div>
             <p className="eyebrow">Your account</p>
-            <h1 className="font-display text-pine-950 mt-2 text-4xl font-semibold tracking-tight">
+            <h1 className="font-display text-ink mt-2 text-4xl font-semibold tracking-tight">
               {resident.fullName
                 ? `Hi, ${resident.fullName.split(' ')[0]}`
                 : 'Welcome back'}
@@ -153,7 +153,10 @@ export default async function AccountPage() {
             {enquiries.length === 0 ? (
               <Empty>
                 No enquiries yet.{' '}
-                <Link href="/enquiry" className="text-pine-700 font-semibold underline">
+                <Link
+                  href="/enquiry"
+                  className="text-brand-700 font-semibold underline"
+                >
                   Tell us what you need
                 </Link>
                 .
@@ -226,9 +229,9 @@ export default async function AccountPage() {
             )}
           </Block>
 
-          <div className="bg-pine-900 rounded-3xl p-6 text-white">
+          <div className="bg-brand-600 rounded-3xl p-6 text-white">
             <p className="font-display text-xl font-semibold">Need something?</p>
-            <p className="text-pine-100/80 mt-2 text-sm">
+            <p className="mt-2 text-sm text-white/85">
               Raise a request any time. Safety requests get a response within 15
               minutes, day or night.
             </p>
@@ -245,7 +248,7 @@ export default async function AccountPage() {
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="font-display text-pine-950 mb-4 text-2xl font-semibold tracking-tight">
+      <h2 className="font-display text-ink mb-4 text-2xl font-semibold tracking-tight">
         {title}
       </h2>
       {children}

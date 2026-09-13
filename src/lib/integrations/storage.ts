@@ -125,6 +125,13 @@ export async function fileUrl(
   path: string,
   expiresInSeconds = 300,
 ): Promise<string> {
+  // Sample listings reference hosted, freely licensed photos by full URL. Real
+  // uploads are always stored under a generated relative path, so only rows
+  // written by the seed ever take this branch.
+  if (visibility === 'public' && path.startsWith('https://images.unsplash.com/')) {
+    return path;
+  }
+
   const safe = assertSafePath(path);
 
   if (provider() === 'local') {

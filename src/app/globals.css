@@ -3,46 +3,46 @@
 /*
  * HashtagStay design tokens.
  *
- * Pine is trust (verification, primary actions); marigold is warmth and is used
- * sparingly for emphasis. Surfaces sit on a warm paper tone rather than pure
- * white so white cards read as lifted without heavy shadows.
+ * Orange is the brand and the call to action; peach is the light-orange surface
+ * for highlighted sections; everything else sits on white with warm grey lines,
+ * in the calm, photo-led style of the big accommodation marketplaces.
  *
- * The site is designed as a single light theme. The scaffold's automatic dark
- * switch painted a near-black body under slate-900 text, which made every page
- * unreadable for anyone whose OS is in dark mode.
+ * White text on brand-600 is used only for bold button labels; orange text on
+ * white uses brand-700 so body-size text keeps readable contrast.
  */
 @theme {
-  --color-pine-50: #eef6f2;
-  --color-pine-100: #d5eae0;
-  --color-pine-200: #aad4c1;
-  --color-pine-300: #76b79d;
-  --color-pine-400: #449477;
-  --color-pine-500: #26775c;
-  --color-pine-600: #1a5f49;
-  --color-pine-700: #154c3b;
-  --color-pine-800: #113d30;
-  --color-pine-900: #0d3026;
-  --color-pine-950: #07201a;
+  --color-brand-50: #fff7ed;
+  --color-brand-100: #ffedd5;
+  --color-brand-200: #fed7aa;
+  --color-brand-300: #fdba74;
+  --color-brand-400: #fb923c;
+  --color-brand-500: #f97316;
+  --color-brand-600: #ea580c;
+  --color-brand-700: #c2410c;
+  --color-brand-800: #9a3412;
+  --color-brand-900: #7c2d12;
+  --color-brand-950: #431407;
 
-  --color-marigold-50: #fff8eb;
-  --color-marigold-100: #fdebc8;
-  --color-marigold-200: #fad68e;
-  --color-marigold-300: #f6bd54;
-  --color-marigold-400: #f2a93b;
-  --color-marigold-500: #e08a1b;
-  --color-marigold-600: #c26a12;
-  --color-marigold-700: #9c4f13;
+  --color-peach-50: #fffaf5;
+  --color-peach-100: #fff3e8;
+  --color-peach-200: #ffe4cc;
+  --color-peach-300: #ffd0a8;
+  --color-peach-400: #ffb77d;
+  --color-peach-500: #ff9f55;
+  --color-peach-600: #f2842f;
+  --color-peach-700: #b45309;
 
-  --color-clay-500: #e4704f;
+  --color-clay-500: #e11d48;
 
-  --color-paper: #fbf8f3;
-  --color-sand: #f4eee4;
-  --color-line: #e8e0d3;
-  --color-ink: #16211c;
-  --color-ink-soft: #5b6660;
+  --color-paper: #ffffff;
+  --color-sand: #fff5ec;
+  --color-line: #ebe6e1;
+  --color-ink: #222222;
+  --color-ink-soft: #6a6a6a;
 
-  --shadow-card: 0 1px 2px rgb(22 33 28 / 0.04), 0 8px 24px -12px rgb(22 33 28 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(22 33 28 / 0.05), 0 24px 48px -20px rgb(22 33 28 / 0.25);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 16px rgb(0 0 0 / 0.06);
+  --shadow-lift: 0 6px 20px rgb(0 0 0 / 0.12);
+  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.08);
 
   --animate-rise: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 
@@ -60,7 +60,8 @@
 
 @theme inline {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  /* One family throughout: headings are weight and size, not a second face. */
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -72,16 +73,15 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-feature-settings: 'ss01', 'cv11';
 }
 
 ::selection {
-  background: var(--color-marigold-200);
-  color: var(--color-pine-950);
+  background: var(--color-brand-100);
+  color: var(--color-brand-950);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-pine-500);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 
@@ -97,23 +97,23 @@ body {
 /* ---- Components ---------------------------------------------------------- */
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold whitespace-nowrap transition duration-200 disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold whitespace-nowrap transition duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
 }
 
 @utility btn-primary {
-  @apply btn bg-pine-800 hover:bg-pine-700 active:bg-pine-900 text-white shadow-sm;
+  @apply btn bg-brand-600 hover:bg-brand-700 font-bold text-white;
 }
 
 @utility btn-accent {
-  @apply btn bg-marigold-400 text-pine-950 hover:bg-marigold-300 shadow-sm;
+  @apply btn text-brand-700 hover:bg-peach-100 bg-white font-bold;
 }
 
 @utility btn-secondary {
-  @apply btn border-line text-ink hover:border-pine-300 hover:bg-pine-50 border bg-white;
+  @apply btn border-ink/80 text-ink hover:bg-sand border bg-white;
 }
 
 @utility btn-ghost {
-  @apply btn text-ink-soft hover:bg-sand hover:text-ink;
+  @apply btn text-ink hover:bg-sand;
 }
 
 @utility card {
@@ -121,21 +121,28 @@ body {
 }
 
 @utility field {
-  @apply border-line text-ink placeholder:text-ink-soft/60 hover:border-pine-200 focus:border-pine-500 focus:ring-pine-100 mt-1.5 block w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm transition outline-none focus:ring-4;
+  @apply text-ink placeholder:text-ink-soft/70 hover:border-ink/60 focus:border-ink focus:ring-ink/10 mt-1.5 block w-full rounded-xl border border-[#c9c2bc] bg-white px-3.5 py-3 text-sm transition outline-none focus:ring-2;
 }
 
 @utility label {
-  @apply text-ink block text-sm font-medium;
+  @apply text-ink block text-sm font-semibold;
 }
 
 @utility eyebrow {
-  @apply text-pine-600 text-xs font-semibold tracking-[0.14em] uppercase;
+  @apply text-brand-700 text-xs font-bold tracking-[0.12em] uppercase;
 }
 
 @utility chip {
-  @apply border-line text-ink hover:border-pine-300 hover:bg-pine-50 inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-sm transition;
+  @apply border-line text-ink hover:border-ink inline-flex items-center gap-1.5 rounded-full border bg-white px-4 py-2 text-sm transition;
 }
 
 @utility container-page {
-  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  @apply mx-auto w-full max-w-[1440px] px-5 sm:px-10 xl:px-20;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

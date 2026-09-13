@@ -23,7 +23,7 @@ export default async function HostStatementsPage() {
           Statements
         </h1>
         <p className="text-sm text-slate-500">
-          Commission on bookings confirmed each month, with GST. HashtagStay never holds
+          Commission on bookings confirmed each month, with GST. Sandy Stays never holds
           your rent or deposits.
         </p>
       </div>

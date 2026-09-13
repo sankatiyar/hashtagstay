@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ListingCard } from '@/components/public/listing-card';
+import { Photo } from '@/components/public/photo';
 import { format, money } from '@/lib/money';
 import {
   absoluteUrl,
@@ -20,11 +21,6 @@ import {
 /**
  * Campus proximity landing page — the student wedge, and the page built to rank
  * for "PG near <campus>", which is what students actually search.
- *
- * Programmatic but not thin: each page carries real inventory, real distances
- * and a real price range. A generated page with nothing on it is worse than no
- * page, so this 404s rather than publishing an empty shell for a campus we
- * have no coverage near.
  */
 export const revalidate = 900;
 
@@ -76,12 +72,11 @@ export default async function NearCampusPage(props: {
     (min, row) => (min === null ? row.fromRentMinor : Math.min(min, row.fromRentMinor)),
     null,
   );
-  const nearest = rows[0]?.distanceMeters ?? null;
 
   const faqs = [
     {
       question: `How far are these stays from ${campus.name}?`,
-      answer: `Every listing on this page is within ${RADIUS_KM} km of ${campus.name}, and each card shows its exact distance. Sort by nearest campus to see the closest first.`,
+      answer: `Every listing on this page is within ${RADIUS_KM} km of ${campus.name}, and each card shows its exact distance.`,
     },
     ...(cheapest !== null
       ? [
@@ -99,7 +94,7 @@ export default async function NearCampusPage(props: {
     {
       question: 'What does verified mean here?',
       answer:
-        'Each listing states which checks we completed — documents reviewed, photos confirmed, or a member of our team visiting in person — and when they expire. We never show a bare "verified" badge, because what was actually checked is the part that matters.',
+        'Each listing states which checks we completed — documents reviewed, photos confirmed, or a member of our team visiting in person — and when they expire.',
     },
   ];
 
@@ -118,60 +113,67 @@ export default async function NearCampusPage(props: {
         )}
       />
 
-      <section className="border-line bg-pine-900 border-b text-white">
-        <div className="container-page py-14">
-          <nav aria-label="Breadcrumb" className="text-pine-200/80 text-sm">
-            <Link href="/search" className="hover:text-white">
-              Stays
-            </Link>{' '}
-            /{' '}
-            <Link href={cityPath} className="hover:text-white">
-              {campus.city}
-            </Link>
-          </nav>
-          <p className="text-marigold-300 mt-6 text-xs font-semibold tracking-[0.14em] uppercase">
-            Student housing
-          </p>
-          <h1 className="font-display mt-3 max-w-3xl text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-            PG and hostels near {campus.name}
-          </h1>
-          <p className="text-pine-100/85 mt-4 max-w-2xl text-lg leading-relaxed">
-            {total > 0 ? (
-              <>
-                {total} verified {total === 1 ? 'stay' : 'stays'} within {RADIUS_KM} km
-                {cheapest !== null && (
-                  <>, from {format(money(cheapest, 'INR'))} a month</>
-                )}
-                {nearest !== null && (
-                  <> — the closest is {(nearest / 1000).toFixed(1)} km away</>
-                )}
-                .
-              </>
-            ) : (
-              <>
-                We don’t have verified inventory near {campus.name} yet. Tell us what
-                you need and a relationship manager will look on your behalf.
-              </>
-            )}
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={`/enquiry?near=${slug}`} className="btn-accent">
-              Find me a stay near campus
-            </Link>
-            <Link
-              href={`/search?near=${slug}&radius=${RADIUS_KM}`}
-              className="btn border border-white/25 text-white hover:bg-white/10"
-            >
-              Refine this search
-            </Link>
+      <section className="container-page pt-6">
+        <div className="bg-sand grid overflow-hidden rounded-[2rem] lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="flex flex-col justify-center p-8 sm:p-12">
+            <nav aria-label="Breadcrumb" className="text-ink-soft text-sm">
+              <Link href="/search" className="hover:underline">
+                Stays
+              </Link>{' '}
+              /{' '}
+              <Link href={cityPath} className="hover:underline">
+                {campus.city}
+              </Link>
+            </nav>
+            <p className="eyebrow mt-6">Student housing</p>
+            <h1 className="text-ink mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
+              PG and hostels near {campus.name}
+            </h1>
+            <p className="text-ink-soft mt-4 text-lg">
+              {total > 0 ? (
+                <>
+                  {total} verified {total === 1 ? 'stay' : 'stays'} within {RADIUS_KM}{' '}
+                  km
+                  {cheapest !== null && (
+                    <>, from {format(money(cheapest, 'INR'))} a month</>
+                  )}
+                  .
+                </>
+              ) : (
+                <>
+                  No verified stays near {campus.name} yet. Tell us what you need and a
+                  relationship manager will look on your behalf.
+                </>
+              )}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href={`/enquiry?near=${slug}`} className="btn-primary px-6 py-3.5">
+                Find me a stay near campus
+              </Link>
+              <Link
+                href={`/search?near=${slug}&radius=${RADIUS_KM}`}
+                className="btn-secondary px-6 py-3.5"
+              >
+                Refine this search
+              </Link>
+            </div>
+          </div>
+          <div className="relative min-h-[260px]">
+            <div className="absolute inset-0">
+              <Photo
+                name="studentBooks"
+                aspect={1}
+                sizes="(min-width: 1024px) 45vw, 100vw"
+                priority
+              />
+            </div>
           </div>
         </div>
       </section>
 
       {rows.length > 0 && (
-        <div className="container-page py-12">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="container-page pt-12">
+          <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {rows.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
@@ -179,23 +181,17 @@ export default async function NearCampusPage(props: {
         </div>
       )}
 
-      <section className="container-page py-8">
+      <section className="container-page pt-20">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <p className="eyebrow">Common questions</p>
-            <h2 className="font-display text-pine-950 mt-3 text-3xl font-semibold tracking-tight">
-              Before you book near {campus.name}
-            </h2>
-          </div>
-          <div className="space-y-3">
+          <h2 className="text-ink text-3xl font-extrabold tracking-tight">
+            Before you book near {campus.name}
+          </h2>
+          <div className="divide-line border-line divide-y border-y">
             {faqs.map((faq) => (
-              <details
-                key={faq.question}
-                className="group card p-5 open:shadow-(--shadow-lift)"
-              >
+              <details key={faq.question} className="group py-5">
                 <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">
                   {faq.question}
-                  <span className="bg-sand text-pine-800 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition group-open:rotate-45">
+                  <span className="text-ink text-xl transition group-open:rotate-45">
                     +
                   </span>
                 </summary>

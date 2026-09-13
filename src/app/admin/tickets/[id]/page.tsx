@@ -11,7 +11,7 @@ import { getTicket } from '@/lib/services/tickets';
 import { staffReplyAction } from '../actions';
 
 export const metadata = {
-  title: 'Ticket · #HashtagStay ops',
+  title: 'Ticket · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

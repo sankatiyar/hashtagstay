@@ -21,7 +21,7 @@ import { isoDate } from '@/lib/time';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'Fees and statements · #HashtagStay ops',
+  title: 'Fees and statements · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

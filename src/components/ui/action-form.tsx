@@ -10,7 +10,7 @@ const BUTTON: Record<Tone, string> = {
   primary: 'btn-primary px-4 py-2',
   secondary: 'btn-secondary px-4 py-2',
   danger: 'btn border border-red-200 bg-white px-4 py-2 text-red-700 hover:bg-red-50',
-  link: 'text-sm font-medium text-pine-700 underline-offset-2 hover:underline',
+  link: 'text-sm font-medium text-brand-700 underline-offset-2 hover:underline',
 };
 
 /**
@@ -63,7 +63,7 @@ export function ActionForm({
           </p>
         )}
         {state.ok && !pending && (
-          <p aria-live="polite" className="text-pine-700 text-xs font-medium">
+          <p aria-live="polite" className="text-brand-700 text-xs font-medium">
             {state.ok}
           </p>
         )}

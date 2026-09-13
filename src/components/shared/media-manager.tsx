@@ -133,7 +133,7 @@ export async function MediaManager({
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="text-sm font-semibold text-slate-900">Verification documents</h2>
         <p className="mt-1 text-xs text-slate-500">
-          Private. Seen only by the operator and HashtagStay’s verification team. PDF or
+          Private. Seen only by the operator and Sandy Stays’s verification team. PDF or
           image up to 10 MB.
         </p>
         {storageReady && (

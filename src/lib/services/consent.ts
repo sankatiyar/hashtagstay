@@ -22,15 +22,15 @@ export type ConsentPurpose =
 
 export const CONSENT_NOTICES: Record<ConsentPurpose, string> = {
   lead_contact:
-    'HashtagStay may call, WhatsApp and SMS me about this enquiry, and share my requirement (not my contact details) with operators who may have a suitable stay.',
+    'Sandy Stays may call, WhatsApp and SMS me about this enquiry, and share my requirement (not my contact details) with operators who may have a suitable stay.',
   call_recording:
-    'Calls with HashtagStay may be recorded for quality, training and to resolve disputes.',
+    'Calls with Sandy Stays may be recorded for quality, training and to resolve disputes.',
   marketing:
-    'HashtagStay may send me offers and updates about new stays. I can unsubscribe at any time.',
+    'Sandy Stays may send me offers and updates about new stays. I can unsubscribe at any time.',
   data_processing:
-    'HashtagStay will process the details I provide to find me accommodation, as described in the privacy notice.',
+    'Sandy Stays will process the details I provide to find me accommodation, as described in the privacy notice.',
   partner_sharing:
-    'HashtagStay may share my name and requirement with a named operator to arrange a visit or booking.',
+    'Sandy Stays may share my name and requirement with a named operator to arrange a visit or booking.',
 };
 
 export interface RecordConsentInput {

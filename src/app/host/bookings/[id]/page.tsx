@@ -61,7 +61,7 @@ export default async function HostBookingPage(props: {
                   : '—',
               ],
               [
-                'HashtagStay commission',
+                'Sandy Stays commission',
                 booking.hostCommissionAmountMinor !== null
                   ? `${format(money(booking.hostCommissionAmountMinor, 'INR'), { showDecimals: true })} + GST, on your monthly statement`
                   : '—',
@@ -76,7 +76,7 @@ export default async function HostBookingPage(props: {
         </dl>
         <p className="mt-3 text-xs text-slate-500">
           For everyone’s safety, residents’ and hosts’ phone numbers are not shared.
-          Your HashtagStay relationship manager coordinates move-in.
+          Your Sandy Stays relationship manager coordinates move-in.
         </p>
       </section>
 

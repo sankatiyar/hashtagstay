@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { LoginForm } from './login-form';
 
 export const metadata = {
-  title: 'Sign in · #HashtagStay ops',
+  title: 'Sign in · Sandy Stays ops',
   // The console must never be indexed.
   robots: { index: false, follow: false },
 };
@@ -26,7 +26,7 @@ export default async function LoginPage(props: {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="text-2xl font-semibold tracking-tight text-slate-900">
-            #HashtagStay
+            Sandy Stays
           </p>
           <p className="mt-1 text-sm text-slate-500">Operations console</p>
         </div>

@@ -56,7 +56,7 @@ import { LeadError, canViewLead } from './leads';
  * Availability is advisory, and charging first is how an aggregator sells a
  * room that is already occupied.
  *
- * Only HashtagStay's facilitation fee is collected. Rent and deposit are paid
+ * Only Sandy Stays's facilitation fee is collected. Rent and deposit are paid
  * to the operator directly, as the booking records.
  */
 
@@ -556,7 +556,7 @@ export async function sendPaymentLink(
     publicToken: payment.publicToken!,
     amountMinor: payment.grossAmountMinor,
     currency: 'INR',
-    description: `HashtagStay facilitation fee — booking ${ctx.booking.reference}`,
+    description: `Sandy Stays facilitation fee — booking ${ctx.booking.reference}`,
     customer: {
       name: ctx.lead.contactName,
       phone: ctx.lead.contactPhone,

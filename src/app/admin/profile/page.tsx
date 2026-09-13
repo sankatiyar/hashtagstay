@@ -6,7 +6,7 @@ import { getStaffProfile } from '@/lib/services/staff';
 import { saveProfileAction } from './actions';
 
 export const metadata = {
-  title: 'My desk settings · #HashtagStay ops',
+  title: 'My desk settings · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

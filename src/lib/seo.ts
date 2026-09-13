@@ -21,7 +21,7 @@ export function absoluteUrl(path: string): string {
   return `${siteUrl()}${suffix}`;
 }
 
-export const BRAND = '#HashtagStay';
+export const BRAND = 'Sandy Stays';
 
 /**
  * Page title. Kept under roughly 60 characters before the brand suffix, since
@@ -140,7 +140,7 @@ export function organizationJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'HashtagStay',
+    name: 'Sandy Stays',
     url: siteUrl(),
     description:
       'Aggregator for verified co-living and student housing in India. Discover online, and a relationship manager helps you close over the phone.',

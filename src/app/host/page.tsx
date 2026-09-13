@@ -28,7 +28,7 @@ export default async function HostDashboard(props: {
     <div className="space-y-6">
       {welcome && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
-          <p className="font-semibold">Welcome to HashtagStay.</p>
+          <p className="font-semibold">Welcome to Sandy Stays.</p>
           <p className="mt-1">
             Next: add your first property, upload photos and ownership documents, then
             send it for verification. It goes live once verified.

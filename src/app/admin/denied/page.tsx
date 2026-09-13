@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/session';
 
 export const metadata = {
-  title: 'Not permitted · #HashtagStay ops',
+  title: 'Not permitted · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

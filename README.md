@@ -1,4 +1,4 @@
-# #HashtagStay
+# Sandy Stays
 
 Digital-first aggregator for co-living and student housing. The operating model
 is **digital discovery + human closure**: SEO/SEM brings demand in, and a

@@ -14,7 +14,7 @@ import { type QueueScope, listLeadQueue, queueCounts } from '@/lib/services/lead
 import { isoDate } from '@/lib/time';
 
 export const metadata = {
-  title: 'Leads · #HashtagStay ops',
+  title: 'Leads · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

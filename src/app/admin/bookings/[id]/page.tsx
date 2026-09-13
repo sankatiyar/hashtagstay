@@ -18,7 +18,7 @@ import type { BookingState } from '@/lib/state-machines';
 import { isoDate } from '@/lib/time';
 
 export const metadata = {
-  title: 'Booking · #HashtagStay ops',
+  title: 'Booking · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

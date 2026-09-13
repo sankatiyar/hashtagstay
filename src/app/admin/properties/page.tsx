@@ -16,7 +16,7 @@ import {
 import { listingMachine } from '@/lib/state-machines';
 
 export const metadata = {
-  title: 'Inventory · #HashtagStay ops',
+  title: 'Inventory · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

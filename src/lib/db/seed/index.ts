@@ -1,11 +1,39 @@
 import { existsSync } from 'node:fs';
 
 import bcrypt from 'bcryptjs';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, like, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
+
+import { PHOTOS, type PhotoKey, storedPhotoPath } from '../../photos';
 import * as schema from '../schema';
 import { connectForScript } from '../script-connection';
 import { INSTITUTIONS } from './institutions-data';
+
+/** Representative photo galleries for the sample listings, cover first. */
+const SAMPLE_GALLERIES: Record<string, PhotoKey[]> = {
+  'nest-malleswaram-sample': [
+    'livingRoom',
+    'sunlitBedroom',
+    'kitchenDining',
+    'sharedLounge',
+    'cosyBedroom',
+  ],
+  'nest-koramangala-women-sample': [
+    'blueBedroom',
+    'kitchenCooking',
+    'greyBedroom',
+    'loungeKitchen',
+    'gardenBedroom',
+  ],
+  'nest-kothrud-sample': [
+    'studentRoom',
+    'studentsLaptop',
+    'studyDesk',
+    'yellowBalconies',
+    'sharedLounge',
+  ],
+  'nest-mukherjee-nagar-sample': ['greyBedroom', 'studyDesk', 'kitchenDining'],
+};
 
 /**
  * Database seed. Run with `npm run db:seed`.
@@ -447,6 +475,29 @@ async function seedDevInventory(db: ReturnType<typeof drizzle>) {
     // Room types have no natural unique key, so replace them wholesale rather
     // than accumulating duplicates across runs.
     await db.delete(schema.roomTypes).where(eq(schema.roomTypes.propertyId, row.id));
+
+    // Sample galleries: representative, freely licensed photos, replaced on
+    // every run. The listing page labels sample listings as such.
+    await db
+      .delete(schema.media)
+      .where(
+        and(
+          eq(schema.media.propertyId, row.id),
+          like(schema.media.storagePath, 'https://images.unsplash.com/%'),
+        ),
+      );
+    for (const [index, key] of (SAMPLE_GALLERIES[property.slug] ?? []).entries()) {
+      await db.insert(schema.media).values({
+        propertyId: row.id,
+        kind: 'image',
+        storagePath: storedPhotoPath(key),
+        altText: PHOTOS[key].alt,
+        sortOrder: index,
+        moderationState: 'approved',
+        moderatedAt: new Date(),
+        moderationNote: 'Sample photo seeded for demonstration.',
+      });
+    }
 
     for (const room of property.rooms) {
       const [roomRow] = await db

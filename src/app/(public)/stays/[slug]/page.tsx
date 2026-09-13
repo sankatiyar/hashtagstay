@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { toggleWishlistAction } from '@/app/(public)/account/actions';
+import { Icon, type IconName } from '@/components/public/icons';
 import { ListingCover } from '@/components/public/listing-cover';
 import { ViewBeacon } from '@/components/public/view-beacon';
 import { WishlistButton } from '@/components/public/wishlist-button';
@@ -41,12 +42,6 @@ import {
  */
 export const revalidate = 600;
 
-const TIER_ORDER: VerificationTier[] = [
-  'documents_checked',
-  'photos_verified',
-  'onground_audited',
-];
-
 export async function generateStaticParams() {
   const slugs = await listLiveListingSlugs();
   return slugs.map(({ slug }) => ({ slug }));
@@ -73,7 +68,7 @@ export async function generateMetadata(props: {
     description:
       `${propertyTypeLabel(listing.propertyType)} in ${where}${price}. ` +
       `${genderPolicyLabel(listing.genderPolicy)}. ` +
-      'Verified by HashtagStay — see exactly which checks we completed.',
+      'Verified by Sandy Stays — see exactly which checks we completed.',
     alternates: { canonical: absoluteUrl(`/stays/${listing.slug}`) },
     openGraph: {
       title: `${listing.name}, ${where}`,
@@ -103,20 +98,42 @@ export default async function ListingPage(props: {
   ]);
 
   const amenities = resolveAmenities(listing.amenities);
-  const safety = amenities.filter((a) => a.isSafetySignal);
-  const comfort = amenities.filter((a) => !a.isSafetySignal);
   const rules = resolveHouseRules(listing.houseRules);
-
   const cheapest = listing.rooms[0];
   const badgeExpired = isExpired(listing.verificationExpiresAt);
   const tier = listing.verificationTier as VerificationTier;
-  const tierRank = TIER_ORDER.indexOf(tier);
   const place = [listing.locality, listing.city].filter(Boolean).join(', ');
   const cityPath = `/city/${listing.city.toLowerCase().replaceAll(' ', '-')}`;
   const bedsFree = listing.rooms.reduce((sum, room) => sum + (room.bedsFree ?? 0), 0);
+  const minStay = Math.min(...listing.rooms.map((r) => r.minTenureMonths));
+  const isSample = listing.slug.endsWith('-sample');
+
+  const highlights: [IconName, string, string][] = [
+    [
+      'shield',
+      badgeExpired
+        ? `${TIER_LABELS[tier]} — due for renewal`
+        : (TIER_LABELS[tier] ?? 'Not yet verified'),
+      badgeExpired
+        ? 'This check has lapsed. We re-confirm the details with the operator before any booking.'
+        : `${TIER_RESIDENT_FACING[tier] ?? TIER_RESIDENT_FACING.none}${listing.verificationExpiresAt ? ` Valid until ${isoDate(listing.verificationExpiresAt)}.` : ''}`,
+    ],
+    [
+      'bed',
+      bedsFree > 0
+        ? `${bedsFree} ${bedsFree === 1 ? 'bed' : 'beds'} reported free`
+        : 'Availability on request',
+      'Counts come from the operator. Your relationship manager re-confirms before you commit.',
+    ],
+    [
+      'lock',
+      'Pay nothing until your bed is confirmed',
+      'The operator confirms first. Your number is never shared with them.',
+    ],
+  ];
 
   return (
-    <main className="pb-8">
+    <main className="pb-28 lg:pb-8">
       <script
         {...jsonLdScript(
           listingJsonLd({
@@ -137,51 +154,38 @@ export default async function ListingPage(props: {
       />
       <ViewBeacon propertyId={listing.id} />
 
-      <div className="container-page pt-6">
-        <nav
-          aria-label="Breadcrumb"
-          className="text-ink-soft flex items-center gap-2 text-sm"
-        >
-          <Link href="/search" className="hover:text-ink">
-            Stays
+      <div className="mx-auto max-w-[1180px] px-5 pt-8 sm:px-10">
+        <h1 className="text-ink text-2xl font-bold tracking-tight sm:text-[1.75rem]">
+          {listing.name}
+        </h1>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-ink flex flex-wrap items-center gap-x-2">
+            {reviewSummary.count > 0 && (
+              <>
+                <span className="flex items-center gap-1 font-semibold">
+                  <Icon name="star" filled strokeWidth={0} className="h-3.5 w-3.5" />
+                  {reviewSummary.average?.toFixed(1)}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span className="underline">{reviewSummary.count} reviews</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <Link href={cityPath} className="font-semibold underline">
+              {place}
+            </Link>
+          </p>
+          <Link
+            href="#rooms"
+            className="text-ink hover:bg-sand flex items-center gap-2 rounded-lg px-2 py-1.5 font-semibold underline"
+          >
+            <Icon name="bed" className="h-4 w-4" /> See rooms
           </Link>
-          <span aria-hidden="true">/</span>
-          <Link href={cityPath} className="hover:text-ink">
-            {listing.city}
-          </Link>
-          <span aria-hidden="true">/</span>
-          <span className="text-ink truncate">{listing.name}</span>
-        </nav>
-
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="eyebrow">
-              {propertyTypeLabel(listing.propertyType)} ·{' '}
-              {genderPolicyLabel(listing.genderPolicy)}
-            </p>
-            <h1 className="font-display text-pine-950 mt-2 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-              {listing.name}
-            </h1>
-            <p className="text-ink-soft mt-2">
-              {listing.addressLine1}, {place}
-              {listing.postalCode ? ` ${listing.postalCode}` : ''}
-            </p>
-          </div>
-          {reviewSummary.count > 0 && (
-            <p className="text-ink flex items-center gap-2 text-sm">
-              <span className="text-marigold-500">★</span>
-              <strong>{reviewSummary.average?.toFixed(1)}</strong>
-              <span className="text-ink-soft">
-                · {reviewSummary.count} verified{' '}
-                {reviewSummary.count === 1 ? 'stay' : 'stays'}
-              </span>
-            </p>
-          )}
         </div>
 
         {/* Gallery */}
-        <div className="mt-6 grid h-[280px] gap-3 overflow-hidden rounded-3xl sm:h-[440px] sm:grid-cols-4 sm:grid-rows-2">
-          <div className="relative sm:col-span-2 sm:row-span-2">
+        <div className="relative mt-6 grid h-[300px] gap-2 overflow-hidden rounded-2xl sm:h-[420px] sm:grid-cols-4 sm:grid-rows-2">
+          <div className="sm:col-span-2 sm:row-span-2">
             <ListingCover
               seed={listing.slug}
               photoUrl={photos[0]?.url}
@@ -189,269 +193,271 @@ export default async function ListingPage(props: {
             />
           </div>
           {[1, 2, 3, 4].map((index) => (
-            <div key={index} className="relative hidden sm:block">
+            <div key={index} className="hidden overflow-hidden sm:block">
               <ListingCover
                 seed={`${listing.slug}-${index}`}
                 photoUrl={photos[index]?.url}
                 alt={photos[index]?.altText ?? `${listing.name} photo ${index + 1}`}
+                className="transition duration-300 hover:brightness-90"
               />
             </div>
           ))}
         </div>
-        {photos.length === 0 && (
+        {(isSample || photos.length === 0) && (
           <p className="text-ink-soft mt-2 text-xs">
-            Illustration — the operator has not uploaded approved photos yet. Ask your
-            relationship manager for a video tour.
+            {isSample
+              ? 'Sample listing for demonstration — photos are representative, not of a real property.'
+              : 'Illustration — the operator has not uploaded approved photos yet. Ask your relationship manager for a video tour.'}
           </p>
         )}
-      </div>
 
-      <div className="container-page mt-10 grid gap-10 lg:grid-cols-[1fr_380px]">
-        <div className="min-w-0 space-y-10">
-          {/* The verification claim, stated in full rather than as a bare badge. */}
-          <section
-            className={`rounded-3xl p-6 sm:p-8 ${badgeExpired ? 'bg-marigold-50 ring-marigold-200 ring-1' : 'bg-pine-900 text-white'}`}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p
-                className={`text-xs font-semibold tracking-[0.14em] uppercase ${badgeExpired ? 'text-marigold-700' : 'text-marigold-300'}`}
-              >
-                What we verified
+        <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_380px] lg:gap-20">
+          <div className="min-w-0">
+            <div className="border-line border-b pb-8">
+              <h2 className="text-ink text-xl font-semibold">
+                {propertyTypeLabel(listing.propertyType)} in {place}
+              </h2>
+              <p className="text-ink mt-1">
+                {listing.rooms.length} room{' '}
+                {listing.rooms.length === 1 ? 'type' : 'types'} ·{' '}
+                {genderPolicyLabel(listing.genderPolicy)} · from {minStay}{' '}
+                {minStay === 1 ? 'month' : 'months'}
               </p>
-              {tierRank >= 0 && (
-                <div className="flex items-center gap-1.5">
-                  {TIER_ORDER.map((t, i) => (
-                    <span
-                      key={t}
-                      className={`h-1.5 w-8 rounded-full ${i <= tierRank ? (badgeExpired ? 'bg-marigold-400' : 'bg-marigold-300') : badgeExpired ? 'bg-marigold-200' : 'bg-white/20'}`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
-            <h2 className="font-display mt-3 text-2xl font-semibold">
-              {TIER_LABELS[tier] ?? 'Not yet verified'}
-              {badgeExpired && ' — due for renewal'}
-            </h2>
-            <p
-              className={`mt-2 max-w-2xl leading-relaxed ${badgeExpired ? 'text-pine-950/80' : 'text-pine-100/85'}`}
-            >
-              {TIER_RESIDENT_FACING[tier] ?? TIER_RESIDENT_FACING.none}
-            </p>
-            {badgeExpired ? (
-              <p className="text-marigold-700 mt-3 text-sm">
-                This check has lapsed, so treat it as out of date. We will re-confirm
-                the details with the operator before any booking.
-              </p>
-            ) : (
-              listing.verificationExpiresAt && (
-                <p className="text-pine-200/80 mt-3 text-sm">
-                  Checked {isoDate(listing.verifiedAt) ?? 'recently'} · valid until{' '}
-                  {isoDate(listing.verificationExpiresAt)}
-                </p>
-              )
-            )}
-          </section>
 
-          {listing.description && (
-            <Section title="About this stay">
-              <p className="text-ink/85 text-lg leading-relaxed whitespace-pre-line">
-                {listing.description}
-              </p>
-            </Section>
-          )}
-
-          <Section title="Rooms and pricing">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {listing.rooms.map((room) => (
-                <div key={room.id} className="card flex flex-col p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-ink font-semibold">{room.name}</h3>
-                      <p className="text-ink-soft mt-0.5 text-sm">
-                        {room.occupancy === 1
-                          ? 'Private room'
-                          : `${room.occupancy} sharing`}
-                        {room.hasPrivateBathroom && ' · attached bathroom'}
-                        {room.areaSqft ? ` · ${room.areaSqft} sq ft` : ''}
-                      </p>
-                    </div>
-                    {(room.bedsFree ?? 0) > 0 ? (
-                      <span className="bg-pine-50 text-pine-700 rounded-full px-2.5 py-1 text-xs font-semibold">
-                        {room.bedsFree} free
-                      </span>
-                    ) : (
-                      <span className="bg-sand text-ink-soft rounded-full px-2.5 py-1 text-xs font-medium">
-                        On request
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-ink mt-5 text-2xl font-bold tracking-tight">
-                    {format(money(room.rentAmountMinor, 'INR'))}
-                    <span className="text-ink-soft text-sm font-normal"> / month</span>
-                  </p>
-                  <dl className="border-line mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm">
-                    <div>
-                      <dt className="text-ink-soft text-xs">Deposit</dt>
-                      <dd className="text-ink font-medium">
-                        {room.depositAmountMinor !== null
-                          ? format(money(room.depositAmountMinor, 'INR'))
-                          : '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-soft text-xs">Minimum stay</dt>
-                      <dd className="text-ink font-medium">
-                        {room.minTenureMonths}{' '}
-                        {room.minTenureMonths === 1 ? 'month' : 'months'}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-              ))}
-            </div>
-            <p className="text-ink-soft mt-3 text-sm">
-              Rent and deposit are as reported by the operator and paid to them
-              directly. Availability is re-checked before a booking — we never promise a
-              bed we have not confirmed.
-            </p>
-          </Section>
-
-          {(safety.length > 0 || comfort.length > 0) && (
-            <Section title="Safety and amenities">
-              <div className="grid gap-6 sm:grid-cols-2">
-                {safety.length > 0 && (
-                  <FeatureList
-                    heading="Safety"
-                    items={safety.map((a) => a.label)}
-                    strong
+            <ul className="border-line space-y-6 border-b py-8">
+              {highlights.map(([icon, title, body]) => (
+                <li key={title} className="flex gap-5">
+                  <Icon
+                    name={icon}
+                    className="text-brand-600 mt-0.5 h-7 w-7 shrink-0"
+                    strokeWidth={1.7}
                   />
-                )}
-                {comfort.length > 0 && (
-                  <FeatureList heading="Comfort" items={comfort.map((a) => a.label)} />
-                )}
-              </div>
-            </Section>
-          )}
-
-          {campuses.length > 0 && (
-            <Section title="Nearby campuses">
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {campuses.map((campus) => (
-                  <li key={campus.slug}>
-                    <Link
-                      href={`/near/${campus.slug}`}
-                      className="card hover:border-pine-200 flex items-center justify-between gap-3 p-4 transition"
-                    >
-                      <span className="text-ink font-medium">{campus.name}</span>
-                      <span className="bg-sand text-pine-800 shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold">
-                        {formatDistance(campus.distanceMeters)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
-          {rules.length > 0 && (
-            <Section title="House rules">
-              <ul className="flex flex-wrap gap-2">
-                {rules.map((rule) => (
-                  <li key={rule.slug} className="chip hover:border-line hover:bg-white">
-                    {rule.label}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
-          <Section title="Reviews from residents">
-            {reviewSummary.count === 0 ? (
-              <div className="card text-ink-soft p-6">
-                No reviews yet. Only residents who booked through HashtagStay and moved
-                in can review, so there are no anonymous ones.
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-6">
                   <div>
-                    <p className="font-display text-pine-900 text-5xl font-semibold">
-                      {reviewSummary.average?.toFixed(1)}
+                    <p className="text-ink font-semibold">{title}</p>
+                    <p className="text-ink-soft mt-0.5">{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {listing.description && (
+              <Section title="About this stay">
+                <p className="text-ink leading-relaxed whitespace-pre-line">
+                  {listing.description}
+                </p>
+              </Section>
+            )}
+
+            <Section title="Rooms and pricing" id="rooms">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {listing.rooms.map((room) => (
+                  <div key={room.id} className="border-line rounded-2xl border p-5">
+                    <Icon name="bed" className="text-ink h-7 w-7" strokeWidth={1.6} />
+                    <p className="text-ink mt-4 font-semibold">{room.name}</p>
+                    <p className="text-ink-soft text-sm">
+                      {room.occupancy === 1
+                        ? 'Private room'
+                        : `${room.occupancy} sharing`}
+                      {room.hasPrivateBathroom && ' · attached bathroom'}
+                    </p>
+                    <p className="text-ink mt-4">
+                      <span className="text-lg font-bold">
+                        {format(money(room.rentAmountMinor, 'INR'))}
+                      </span>{' '}
+                      month
                     </p>
                     <p className="text-ink-soft text-sm">
-                      overall, from {reviewSummary.count} verified{' '}
-                      {reviewSummary.count === 1 ? 'stay' : 'stays'}
+                      Deposit{' '}
+                      {room.depositAmountMinor !== null
+                        ? format(money(room.depositAmountMinor, 'INR'))
+                        : '—'}{' '}
+                      · min {room.minTenureMonths} mo
+                      {(room.bedsFree ?? 0) > 0 && ` · ${room.bedsFree} free`}
                     </p>
                   </div>
-                  {reviewSummary.safetyAverage !== null && (
-                    <div>
-                      <p className="font-display text-pine-900 text-5xl font-semibold">
-                        {reviewSummary.safetyAverage.toFixed(1)}
-                      </p>
-                      <p className="text-ink-soft text-sm">for safety</p>
-                    </div>
-                  )}
-                </div>
-                <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+                ))}
+              </div>
+            </Section>
+
+            {amenities.length > 0 && (
+              <Section title="What this place offers">
+                <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                  {amenities.map((amenity) => (
+                    <li key={amenity.slug} className="text-ink flex items-center gap-4">
+                      <Icon
+                        name={amenity.isSafetySignal ? 'shield' : 'check'}
+                        className={`h-6 w-6 ${amenity.isSafetySignal ? 'text-brand-600' : 'text-ink'}`}
+                        strokeWidth={1.7}
+                      />
+                      {amenity.label}
+                      {amenity.isSafetySignal && (
+                        <span className="bg-brand-50 text-brand-700 rounded-full px-2 py-0.5 text-xs font-semibold">
+                          Safety
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
+
+            {campuses.length > 0 && (
+              <Section title="Nearby campuses">
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {campuses.map((campus) => (
+                    <li key={campus.slug}>
+                      <Link
+                        href={`/near/${campus.slug}`}
+                        className="border-line hover:border-ink flex items-center justify-between gap-3 rounded-2xl border p-4 transition"
+                      >
+                        <span className="text-ink flex items-center gap-3 font-semibold">
+                          <Icon name="cap" className="text-brand-600 h-5 w-5" />
+                          {campus.name}
+                        </span>
+                        <span className="text-ink-soft shrink-0 text-sm">
+                          {formatDistance(campus.distanceMeters)}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
+
+            {rules.length > 0 && (
+              <Section title="House rules">
+                <ul className="flex flex-wrap gap-2">
+                  {rules.map((rule) => (
+                    <li
+                      key={rule.slug}
+                      className="border-line text-ink rounded-full border px-4 py-2 text-sm"
+                    >
+                      {rule.label}
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
+
+            <Section
+              title={
+                reviewSummary.count > 0
+                  ? `★ ${reviewSummary.average?.toFixed(1)} · ${reviewSummary.count} reviews`
+                  : 'Reviews'
+              }
+            >
+              {reviewSummary.count === 0 ? (
+                <p className="text-ink-soft">
+                  No reviews yet. Only residents who booked through Sandy Stays and
+                  moved in can review, so there are no anonymous ones.
+                </p>
+              ) : (
+                <ul className="grid gap-8 sm:grid-cols-2">
                   {reviewSummary.reviews.slice(0, 10).map((review) => (
-                    <li key={review.id} className="card p-5">
+                    <li key={review.id}>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-brand-600 flex h-11 w-11 items-center justify-center rounded-full font-bold text-white">
+                          {review.residentName.slice(0, 1)}
+                        </span>
+                        <div>
+                          <p className="text-ink font-semibold">
+                            {review.residentName}
+                          </p>
+                          <p className="text-ink-soft text-sm">
+                            Verified stay · {review.createdAt.toISOString().slice(0, 7)}
+                          </p>
+                        </div>
+                      </div>
                       <p
-                        className="text-marigold-500"
+                        className="text-ink mt-3 text-sm"
                         aria-label={`${review.rating} out of 5`}
                       >
                         {'★'.repeat(review.rating)}
                         <span className="text-line">
                           {'★'.repeat(5 - review.rating)}
                         </span>
+                        {review.title && (
+                          <span className="ml-2 font-semibold">{review.title}</span>
+                        )}
                       </p>
-                      {review.title && (
-                        <p className="text-ink mt-2 font-semibold">{review.title}</p>
-                      )}
-                      <p className="text-ink/85 mt-1 leading-relaxed">{review.body}</p>
-                      <p className="text-ink-soft mt-3 text-xs">
-                        {review.residentName} · verified stay ·{' '}
-                        {review.createdAt.toISOString().slice(0, 7)}
-                      </p>
+                      <p className="text-ink mt-1 leading-relaxed">{review.body}</p>
                     </li>
                   ))}
                 </ul>
-              </>
-            )}
-          </Section>
-        </div>
-
-        {/* Booking panel */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="card p-6">
-            {cheapest && (
-              <>
-                <p className="text-ink-soft text-sm">
-                  {listing.rooms.length > 1 ? 'Rooms from' : 'Rent'}
-                </p>
-                <p className="text-ink text-3xl font-bold tracking-tight">
-                  {format(money(cheapest.rentAmountMinor, 'INR'))}
-                  <span className="text-ink-soft text-base font-normal"> / month</span>
-                </p>
-              </>
-            )}
-            <p className="mt-2 text-sm">
-              {bedsFree > 0 ? (
-                <span className="text-pine-700 font-medium">
-                  {bedsFree} {bedsFree === 1 ? 'bed' : 'beds'} reported free
-                </span>
-              ) : (
-                <span className="text-ink-soft">Availability confirmed on request</span>
               )}
-            </p>
+            </Section>
+          </div>
 
-            <Link
-              href={`/enquiry?listing=${listing.slug}`}
-              className="btn-primary mt-6 w-full py-3.5 text-base"
-            >
-              Check availability
-            </Link>
-            <div className="mt-3">
+          {/* Booking panel */}
+          <aside className="hidden lg:block">
+            <div className="border-line sticky top-28 rounded-2xl border p-6 shadow-(--shadow-lift)">
+              {cheapest && (
+                <p className="text-ink">
+                  {listing.rooms.length > 1 && (
+                    <span className="text-ink-soft">From </span>
+                  )}
+                  <span className="text-2xl font-bold">
+                    {format(money(cheapest.rentAmountMinor, 'INR'))}
+                  </span>{' '}
+                  month
+                </p>
+              )}
+
+              <div className="mt-5 overflow-hidden rounded-xl border border-[#b8b1ab]">
+                <div className="grid grid-cols-2">
+                  <Field label="Room" value={cheapest?.name ?? '—'} />
+                  <Field
+                    label="Min stay"
+                    value={`${minStay} ${minStay === 1 ? 'month' : 'months'}`}
+                    border
+                  />
+                </div>
+                <div className="border-t border-[#b8b1ab]">
+                  <Field
+                    label="Availability"
+                    value={
+                      bedsFree > 0
+                        ? `${bedsFree} ${bedsFree === 1 ? 'bed' : 'beds'} reported free`
+                        : 'Confirmed on request'
+                    }
+                  />
+                </div>
+              </div>
+
+              <Link
+                href={`/enquiry?listing=${listing.slug}`}
+                className="btn-primary mt-4 w-full py-3.5 text-base"
+              >
+                Check availability
+              </Link>
+              <p className="text-ink-soft mt-3 text-center text-sm">
+                You won’t be charged yet
+              </p>
+
+              <dl className="border-line text-ink mt-5 space-y-3 border-t pt-5">
+                <div className="flex justify-between">
+                  <dt className="underline">Rent, paid to operator</dt>
+                  <dd>
+                    {cheapest ? format(money(cheapest.rentAmountMinor, 'INR')) : '—'}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="underline">Refundable deposit</dt>
+                  <dd>
+                    {cheapest?.depositAmountMinor != null
+                      ? format(money(cheapest.depositAmountMinor, 'INR'))
+                      : '—'}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="underline">Sandy Stays booking fee</dt>
+                  <dd className="text-ink-soft">shown before you pay</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="mt-4">
               {/* Rendered signed-in so the page stays statically generated; the
                   action tells a signed-out visitor to sign in. */}
               <WishlistButton
@@ -462,88 +468,67 @@ export default async function ListingPage(props: {
                 returnTo={`/stays/${listing.slug}`}
               />
             </div>
+          </aside>
+        </div>
+      </div>
 
-            <ul className="border-line text-ink mt-6 space-y-3 border-t pt-5 text-sm">
-              {[
-                ['Free to enquire', 'No brokerage, no charge to talk to us.'],
-                [
-                  'Operator confirms first',
-                  'You pay nothing until your bed is confirmed.',
-                ],
-                [
-                  'Private by default',
-                  'Your number is never shared with the operator.',
-                ],
-              ].map(([title, body]) => (
-                <li key={title} className="flex gap-3">
-                  <span className="bg-pine-100 text-pine-700 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
-                    <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
-                      <path
-                        d="m5 12.5 4.5 4.5L19 7.5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                  <span>
-                    <span className="font-semibold">{title}.</span>{' '}
-                    <span className="text-ink-soft">{body}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
+      {/* Mobile booking bar */}
+      <div className="border-line fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t bg-white px-5 py-4 lg:hidden">
+        <p className="text-ink">
+          {cheapest && (
+            <>
+              <span className="font-bold">
+                {format(money(cheapest.rentAmountMinor, 'INR'))}
+              </span>{' '}
+              month
+            </>
+          )}
+          <span className="text-ink-soft block text-xs">You won’t be charged yet</span>
+        </p>
+        <Link
+          href={`/enquiry?listing=${listing.slug}`}
+          className="btn-primary px-6 py-3"
+        >
+          Check availability
+        </Link>
       </div>
     </main>
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  id?: string;
+  children: ReactNode;
+}) {
   return (
-    <section>
-      <h2 className="font-display text-pine-950 mb-5 text-2xl font-semibold tracking-tight">
-        {title}
-      </h2>
+    <section
+      id={id}
+      className="border-line scroll-mt-28 border-b py-10 last:border-b-0"
+    >
+      <h2 className="text-ink mb-6 text-xl font-semibold">{title}</h2>
       {children}
     </section>
   );
 }
 
-function FeatureList({
-  heading,
-  items,
-  strong = false,
+function Field({
+  label,
+  value,
+  border = false,
 }: {
-  heading: string;
-  items: string[];
-  strong?: boolean;
+  label: string;
+  value: string;
+  border?: boolean;
 }) {
   return (
-    <div className="card p-5">
-      <p className="text-ink text-sm font-semibold">{heading}</p>
-      <ul className="mt-3 space-y-2">
-        {items.map((item) => (
-          <li key={item} className="text-ink/85 flex items-center gap-2.5 text-sm">
-            <span
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${strong ? 'bg-pine-800 text-marigold-300' : 'bg-sand text-pine-700'}`}
-            >
-              <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">
-                <path
-                  d="m5 12.5 4.5 4.5L19 7.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-            {item}
-          </li>
-        ))}
-      </ul>
+    <div className={`px-3.5 py-2.5 ${border ? 'border-l border-[#b8b1ab]' : ''}`}>
+      <p className="text-ink text-[10px] font-bold tracking-wide uppercase">{label}</p>
+      <p className="text-ink truncate text-sm">{value}</p>
     </div>
   );
 }

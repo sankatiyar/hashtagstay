@@ -3,9 +3,9 @@ import Link from 'next/link';
 import { HostSignupForm } from '../auth-forms';
 
 export const metadata = {
-  title: 'List your property · HashtagStay',
+  title: 'List your property · Sandy Stays',
   description:
-    'List co-living, student housing or rooms on HashtagStay free. We verify, bring verified residents, and charge commission only on bookings.',
+    'List co-living, student housing or rooms on Sandy Stays free. We verify, bring verified residents, and charge commission only on bookings.',
 };
 
 export default function HostSignupPage() {
@@ -13,7 +13,7 @@ export default function HostSignupPage() {
     <main className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto max-w-2xl">
         <p className="text-2xl font-semibold tracking-tight text-slate-900">
-          List your property on HashtagStay
+          List your property on Sandy Stays
         </p>
         <ul className="mt-3 space-y-1 text-sm text-slate-600">
           <li>• Free to list. Commission only on bookings we bring.</li>

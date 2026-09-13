@@ -179,7 +179,7 @@ export async function listTaxDocumentsForBooking(bookingId: string) {
 export function issuerDetails() {
   const company = issuer();
   return {
-    name: 'HashtagStay',
+    name: 'Sandy Stays',
     gstin: company.gstin,
     stateCode: company.stateCode,
     isTest: company.isTest,

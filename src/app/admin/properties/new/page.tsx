@@ -6,7 +6,7 @@ import { listOrganizationOptions, listPropertyCities } from '@/lib/services/prop
 import { PropertyForm } from './property-form';
 
 export const metadata = {
-  title: 'Add property · #HashtagStay ops',
+  title: 'Add property · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

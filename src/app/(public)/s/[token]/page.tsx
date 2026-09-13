@@ -15,7 +15,7 @@ import { TIER_LABELS, type VerificationTier } from '@/lib/verification/rubric';
 import { markInterest } from './actions';
 
 export const metadata: Metadata = {
-  title: 'Your shortlist · HashtagStay',
+  title: 'Your shortlist · Sandy Stays',
   // Personal to one resident; never indexed.
   robots: { index: false, follow: false },
 };
@@ -33,7 +33,7 @@ export default async function ShortlistPage(props: {
     return (
       <main className="container-page max-w-xl py-16">
         <div className="card p-8">
-          <h1 className="font-display text-pine-950 text-3xl font-semibold">
+          <h1 className="font-display text-ink text-3xl font-semibold">
             This shortlist has expired
           </h1>
           <p className="text-ink-soft mt-3">
@@ -61,7 +61,7 @@ export default async function ShortlistPage(props: {
   return (
     <main className="container-page max-w-5xl py-12">
       <p className="eyebrow">Your shortlist</p>
-      <h1 className="font-display text-pine-950 mt-2 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+      <h1 className="font-display text-ink mt-2 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
         {first ? `${first}, here are your stays` : 'Here are your stays'}
       </h1>
       <p className="text-ink-soft mt-3 max-w-2xl text-lg">
@@ -70,9 +70,9 @@ export default async function ShortlistPage(props: {
         {isoDate(data.shortlist.expiresAt)}.
       </p>
       {data.shortlist.message && (
-        <blockquote className="bg-pine-800 mt-6 max-w-2xl rounded-3xl rounded-tl-md px-6 py-5 text-white">
+        <blockquote className="bg-brand-600 mt-6 max-w-2xl rounded-3xl rounded-tl-md px-6 py-5 text-white">
           <p className="leading-relaxed">“{data.shortlist.message}”</p>
-          <p className="text-pine-200 mt-2 text-sm">— {rmFirst}</p>
+          <p className="mt-2 text-sm text-white/85">— {rmFirst}</p>
         </blockquote>
       )}
 
@@ -97,7 +97,7 @@ export default async function ShortlistPage(props: {
                   photoUrl={covers[index]}
                   alt={item.propertyName}
                 />
-                <span className="text-pine-900 absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-xs font-bold shadow">
+                <span className="text-ink absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-xs font-bold shadow">
                   Option {index + 1}
                 </span>
               </div>
@@ -145,7 +145,7 @@ export default async function ShortlistPage(props: {
                   )}
                 </div>
                 {priceChanged && (
-                  <p className="text-marigold-700 mt-2 text-xs">
+                  <p className="text-peach-700 mt-2 text-xs">
                     The operator’s listed price has changed since this was quoted. Your
                     relationship manager will confirm.
                   </p>
@@ -193,7 +193,7 @@ export default async function ShortlistPage(props: {
                   {item.propertyState === 'live' && (
                     <Link
                       href={`/stays/${item.propertySlug}`}
-                      className="text-pine-700 ml-auto text-sm font-semibold hover:underline"
+                      className="text-brand-700 ml-auto text-sm font-semibold hover:underline"
                     >
                       Full details →
                     </Link>

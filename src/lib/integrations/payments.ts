@@ -7,7 +7,7 @@ import { absoluteUrl } from '@/lib/seo';
  * Payment provider adapter (FR-20).
  *
  * Phase 1 collects **only the facilitation fee**. Rent and deposit go from the
- * resident to the operator directly, which keeps HashtagStay outside
+ * resident to the operator directly, which keeps Sandy Stays outside
  * payment-aggregator regulation.
  *
  * Providers:

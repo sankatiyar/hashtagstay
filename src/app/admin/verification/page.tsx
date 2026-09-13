@@ -6,7 +6,7 @@ import { can } from '@/lib/auth/permissions';
 import { listProperties } from '@/lib/services/properties';
 
 export const metadata = {
-  title: 'Verification · #HashtagStay ops',
+  title: 'Verification · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

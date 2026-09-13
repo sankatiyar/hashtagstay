@@ -5,7 +5,7 @@ import { maskPhone } from '@/lib/phone';
 import { recentNotifications } from '@/lib/services/desk';
 
 export const metadata = {
-  title: 'Outbox · #HashtagStay ops',
+  title: 'Outbox · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

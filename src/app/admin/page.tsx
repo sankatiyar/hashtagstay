@@ -4,7 +4,7 @@ import { requireStaff } from '@/lib/auth/guard';
 import { countPropertiesByState, listStaleInventory } from '@/lib/services/properties';
 
 export const metadata = {
-  title: 'Overview · #HashtagStay ops',
+  title: 'Overview · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 

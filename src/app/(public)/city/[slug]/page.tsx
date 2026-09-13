@@ -2,8 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { CategoryBar } from '@/components/public/category-bar';
 import { ListingCard } from '@/components/public/listing-card';
+import { Photo } from '@/components/public/photo';
 import { format, money } from '@/lib/money';
+import { CITY_PHOTOS } from '@/lib/photos';
 import { absoluteUrl, breadcrumbJsonLd, jsonLdScript, pageTitle } from '@/lib/seo';
 import {
   listLiveCities,
@@ -57,9 +60,10 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
   const city = await resolveCity(slug);
   if (!city) notFound();
 
-  const [{ rows, total }, campuses] = await Promise.all([
+  const [{ rows, total }, campuses, cities] = await Promise.all([
     searchListings({ city, pageSize: 24 }),
     listPublishedInstitutions(),
+    listLiveCities(),
   ]);
 
   const cityCampuses = campuses.filter((campus) => campus.city === city);
@@ -67,7 +71,7 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
     (min, row) => (min === null ? row.fromRentMinor : Math.min(min, row.fromRentMinor)),
     null,
   );
-  const womenOnly = rows.filter((row) => row.genderPolicy === 'female_only').length;
+  const photo = CITY_PHOTOS[city];
 
   return (
     <main>
@@ -80,66 +84,59 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
         )}
       />
 
-      <section className="border-line relative overflow-hidden border-b">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(40rem_22rem_at_85%_0%,var(--color-marigold-100),transparent_65%)]"
-        />
-        <div className="container-page relative py-14">
-          <nav aria-label="Breadcrumb" className="text-ink-soft text-sm">
-            <Link href="/search" className="hover:text-ink">
-              Stays
-            </Link>{' '}
-            / <span className="text-ink">{city}</span>
-          </nav>
-          <h1 className="font-display text-pine-950 mt-4 max-w-3xl text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-            Co-living and student housing in {city}
-          </h1>
-          <p className="text-ink-soft mt-4 max-w-2xl text-lg leading-relaxed">
-            Every listing states which checks we completed and when they expire — and a
-            relationship manager re-confirms the bed before you pay anything.
-          </p>
-
-          <dl className="mt-8 flex flex-wrap gap-3">
-            <Pill label="verified stays" value={String(total)} />
-            {cheapest !== null && (
-              <Pill
-                label="lowest rent / month"
-                value={format(money(cheapest, 'INR'))}
-              />
-            )}
-            {womenOnly > 0 && <Pill label="women-only" value={String(womenOnly)} />}
-            {cityCampuses.length > 0 && (
-              <Pill label="campuses mapped" value={String(cityCampuses.length)} />
-            )}
-          </dl>
-
-          {cityCampuses.length > 0 && (
-            <div className="mt-8">
-              <p className="label">Search near a campus</p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {cityCampuses.map((campus) => (
-                  <li key={campus.slug}>
-                    <Link href={`/near/${campus.slug}`} className="chip">
-                      {campus.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+      <section className="container-page pt-6">
+        <div className="bg-brand-600 relative overflow-hidden rounded-[2rem]">
+          {photo && (
+            <div className="absolute inset-0">
+              <Photo name={photo} aspect={16 / 6} sizes="100vw" priority alt="" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
             </div>
           )}
+          <div className="relative flex min-h-[340px] flex-col justify-end p-6 text-white sm:p-10 lg:p-14">
+            <nav aria-label="Breadcrumb" className="text-sm text-white/80">
+              <Link href="/search" className="hover:underline">
+                Stays
+              </Link>{' '}
+              / {city}
+            </nav>
+            <h1 className="mt-3 max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Co-living and student housing in {city}
+            </h1>
+            <p className="mt-3 text-lg text-white/90">
+              {total} verified {total === 1 ? 'stay' : 'stays'}
+              {cheapest !== null && ` · from ${format(money(cheapest, 'INR'))} a month`}
+            </p>
+          </div>
         </div>
       </section>
 
-      <div className="container-page py-12">
+      <section className="container-page border-line mt-6 border-b">
+        <CategoryBar cities={cities} active={{ city }} />
+      </section>
+
+      <div className="container-page pt-8">
+        {cityCampuses.length > 0 && (
+          <div className="mb-8">
+            <p className="text-ink font-semibold">Search near a campus</p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {cityCampuses.map((campus) => (
+                <li key={campus.slug}>
+                  <Link href={`/near/${campus.slug}`} className="chip">
+                    {campus.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {rows.length === 0 ? (
-          <div className="card px-6 py-16 text-center">
-            <p className="font-display text-ink text-2xl font-semibold">
-              No verified inventory in {city} yet
+          <div className="border-line rounded-2xl border px-6 py-16 text-center">
+            <p className="text-ink text-2xl font-bold">
+              No verified stays in {city} yet
             </p>
             <p className="text-ink-soft mx-auto mt-2 max-w-md">
-              We verify each property before it appears here. Tell us what you need and
-              a relationship manager will look on your behalf.
+              Tell us what you need and a relationship manager will look on your behalf.
             </p>
             <Link
               href={`/enquiry?city=${encodeURIComponent(city)}`}
@@ -150,19 +147,18 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
           </div>
         ) : (
           <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {rows.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} showDistance={false} />
               ))}
             </div>
-
-            <div className="mt-10 flex flex-wrap gap-3">
+            <div className="mt-12 flex flex-wrap gap-3">
               {total > rows.length && (
                 <Link
                   href={`/search?city=${encodeURIComponent(city)}`}
                   className="btn-secondary"
                 >
-                  See all {total} stays in {city}
+                  Show all {total} stays
                 </Link>
               )}
               <Link
@@ -176,14 +172,5 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
         )}
       </div>
     </main>
-  );
-}
-
-function Pill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-line flex items-baseline gap-2 rounded-full border bg-white px-4 py-2 shadow-(--shadow-card)">
-      <dd className="font-display text-pine-900 text-lg font-semibold">{value}</dd>
-      <dt className="text-ink-soft text-sm">{label}</dt>
-    </div>
   );
 }

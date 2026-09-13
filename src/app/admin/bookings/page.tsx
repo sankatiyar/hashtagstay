@@ -9,7 +9,7 @@ import { listBookings } from '@/lib/services/bookings';
 import { isoDate } from '@/lib/time';
 
 export const metadata = {
-  title: 'Bookings · #HashtagStay ops',
+  title: 'Bookings · Sandy Stays ops',
   robots: { index: false, follow: false },
 };
 
