@@ -1,9 +1,16 @@
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db';
-import { availability, institutions, properties, roomTypes } from '@/lib/db/schema';
+import {
+  availability,
+  institutions,
+  media,
+  properties,
+  roomTypes,
+} from '@/lib/db/schema';
 import { type LatLng } from '@/lib/db/schema/columns';
 import { withinKm } from '@/lib/geo';
+import { fileUrl } from '@/lib/integrations/storage';
 
 /**
  * Public, resident-facing search (FR-01, FR-02, FR-03).
@@ -58,6 +65,21 @@ export interface SearchResultRow {
   roomTypeCount: number;
   /** Metres from the requested institution, when one was given. */
   distanceMeters: number | null;
+  /** First approved photo, or null to draw the illustrated cover. */
+  coverUrl: string | null;
+}
+
+/**
+ * Resolve a photo path to a URL, failing soft. A deployment without storage
+ * configured must still render search — it just draws illustrated covers.
+ */
+async function coverUrlFor(path: string | null): Promise<string | null> {
+  if (!path) return null;
+  try {
+    return await fileUrl('public', path);
+  } catch {
+    return null;
+  }
 }
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -215,6 +237,14 @@ export async function searchListings(filters: SearchFilters = {}): Promise<{
       bedsFree: sql<number>`coalesce(sum(${availability.availableCount}), 0)::int`,
       roomTypeCount: sql<number>`count(distinct ${roomTypes.id})::int`,
       distanceMeters: distanceExpr,
+      coverPath: sql<string | null>`(
+        SELECT ${media.storagePath} FROM ${media}
+        WHERE ${media.propertyId} = ${properties.id}
+          AND ${media.moderationState} = 'approved'
+          AND ${media.deletedAt} IS NULL
+        ORDER BY ${media.sortOrder} ASC
+        LIMIT 1
+      )`,
     })
     .from(properties)
     // Inner join: a property with no sellable room is not a listing.
@@ -256,8 +286,15 @@ export async function searchListings(filters: SearchFilters = {}): Promise<{
     .select({ total: sql<number>`count(*)::int` })
     .from((having ? countBase.having(having) : countBase).as('matches'));
 
+  const withCovers = await Promise.all(
+    rows.map(async ({ coverPath, ...row }) => ({
+      ...row,
+      coverUrl: await coverUrlFor(coverPath),
+    })),
+  );
+
   return {
-    rows: rows as SearchResultRow[],
+    rows: withCovers as SearchResultRow[],
     total: counted[0]?.total ?? 0,
     page,
     pageSize,

@@ -15,15 +15,36 @@ const LANGUAGES = [
   ['bn', 'Bengali'],
 ] as const;
 
-const input =
-  'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900';
-
 function FieldError({ message }: { message?: string }) {
   return message ? (
-    <p role="alert" className="mt-1 text-xs text-red-700">
+    <p role="alert" className="mt-1.5 text-xs font-medium text-red-700">
       {message}
     </p>
   ) : null;
+}
+
+function Field({
+  id,
+  label,
+  hint,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="label">
+        {label} {hint && <span className="text-ink-soft font-normal">{hint}</span>}
+      </label>
+      {children}
+      <FieldError message={error} />
+    </div>
+  );
 }
 
 export function EnquiryForm({
@@ -54,30 +75,31 @@ export function EnquiryForm({
 
   if (state.step === 'done') {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
-        <h2 className="text-lg font-semibold text-emerald-900">
-          {state.merged
-            ? 'We have added this to your open enquiry'
-            : 'Enquiry received'}
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-emerald-900">
-          Your reference is <strong>{state.reference}</strong>. A relationship manager
-          will call you {state.responsePromise}. We have sent a confirmation to your
-          phone.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            href="/account"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Track your enquiry
-          </Link>
-          <Link
-            href="/search"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-          >
-            Keep browsing
-          </Link>
+      <div className="card overflow-hidden">
+        <div className="bg-pine-800 px-7 py-8 text-white">
+          <span className="bg-marigold-400 text-pine-950 flex h-12 w-12 items-center justify-center rounded-2xl text-xl">
+            ✓
+          </span>
+          <h2 className="font-display mt-5 text-3xl font-semibold">
+            {state.merged ? 'Added to your open enquiry' : 'Enquiry received'}
+          </h2>
+          <p className="text-pine-100/85 mt-2">
+            Reference <strong className="text-white">{state.reference}</strong>
+          </p>
+        </div>
+        <div className="p-7">
+          <p className="text-ink leading-relaxed">
+            A relationship manager will call you {state.responsePromise}. We’ve sent a
+            confirmation to your phone.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/account" className="btn-primary">
+              Track your enquiry
+            </Link>
+            <Link href="/search" className="btn-secondary">
+              Keep browsing
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -85,51 +107,48 @@ export function EnquiryForm({
 
   if (state.step === 'verify') {
     return (
-      <form
-        action={formAction}
-        className="space-y-4 rounded-xl border border-slate-200 bg-white p-6"
-      >
+      <form action={formAction} className="card space-y-6 p-7">
         {Object.entries(values).map(([key, value]) => (
           <input key={key} type="hidden" name={key} value={value} />
         ))}
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Check your phone</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            We sent a 6-digit code to {state.destination ?? values.phone}. It confirms
-            the number is yours before a relationship manager calls.
+          <p className="eyebrow">Step 2 of 2</p>
+          <h2 className="font-display text-ink mt-2 text-3xl font-semibold">
+            Check your phone
+          </h2>
+          <p className="text-ink-soft mt-2">
+            We sent a 6-digit code to{' '}
+            <strong className="text-ink">{state.destination ?? values.phone}</strong>.
+            It confirms the number is yours before a relationship manager calls.
           </p>
         </div>
 
         {state.devCode && (
-          <p className="rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Test mode — SMS is not configured, so your code is{' '}
-            <strong>{state.devCode}</strong>.
+          <p className="border-marigold-300 bg-marigold-50 text-marigold-700 rounded-xl border border-dashed px-4 py-3 text-sm">
+            Demo mode — SMS isn’t connected yet, so your code is{' '}
+            <strong className="tracking-widest">{state.devCode}</strong>.
           </p>
         )}
 
-        <div>
-          <label htmlFor="code" className="block text-sm font-medium text-slate-700">
-            Verification code
-          </label>
+        <Field id="code" label="Verification code" error={errors.code ?? errors.phone}>
           <input
             id="code"
             name="code"
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
-            className={`${input} max-w-40 text-lg tracking-widest`}
+            className="field max-w-52 text-center text-2xl font-semibold tracking-[0.4em]"
           />
-          <FieldError message={errors.code ?? errors.phone} />
-        </div>
+        </Field>
         <FieldError message={errors._form} />
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           <button
             type="submit"
             name="intent"
             value="verify"
             disabled={pending}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+            className="btn-primary py-3"
           >
             {pending ? 'Checking…' : 'Verify and send enquiry'}
           </button>
@@ -138,7 +157,7 @@ export function EnquiryForm({
             name="intent"
             value="resend"
             disabled={pending}
-            className="text-sm text-slate-600 underline hover:text-slate-900"
+            className="text-pine-700 text-sm font-medium hover:underline"
           >
             Send a new code
           </button>
@@ -154,31 +173,24 @@ export function EnquiryForm({
       <input type="hidden" name="near" value={values.near ?? ''} />
 
       {errors._form && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
           {errors._form}
         </p>
       )}
 
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">About you</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-              Full name
-            </label>
+      <section className="card space-y-5 p-6 sm:p-7">
+        <h2 className="font-display text-ink text-xl font-semibold">About you</h2>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field id="name" label="Full name" error={errors.name}>
             <input
               id="name"
               name="name"
               defaultValue={values.name}
               autoComplete="name"
-              className={input}
+              className="field"
             />
-            <FieldError message={errors.name} />
-          </div>
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-              Mobile number
-            </label>
+          </Field>
+          <Field id="phone" label="Mobile number" error={errors.phone}>
             <input
               id="phone"
               name="phone"
@@ -186,36 +198,25 @@ export function EnquiryForm({
               inputMode="tel"
               autoComplete="tel"
               placeholder="98765 43210"
-              className={input}
+              className="field"
             />
-            <FieldError message={errors.phone} />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-              Email <span className="font-normal text-slate-400">(optional)</span>
-            </label>
+          </Field>
+          <Field id="email" label="Email" hint="(optional)" error={errors.email}>
             <input
               id="email"
               name="email"
               type="email"
               defaultValue={values.email}
               autoComplete="email"
-              className={input}
+              className="field"
             />
-            <FieldError message={errors.email} />
-          </div>
-          <div>
-            <label
-              htmlFor="preferredLanguage"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Call me in
-            </label>
+          </Field>
+          <Field id="preferredLanguage" label="Call me in">
             <select
               id="preferredLanguage"
               name="preferredLanguage"
               defaultValue={values.preferredLanguage ?? 'en'}
-              className={input}
+              className="field"
             >
               {LANGUAGES.map(([code, label]) => (
                 <option key={code} value={code}>
@@ -223,128 +224,99 @@ export function EnquiryForm({
                 </option>
               ))}
             </select>
-          </div>
+          </Field>
         </div>
 
-        <label className="flex items-start gap-2 text-sm text-slate-700">
+        <label className="text-ink flex items-start gap-3 text-sm">
           <input
             type="checkbox"
             name="isUnder18"
             checked={under18}
             onChange={(event) => setUnder18(event.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300"
+            className="border-line accent-pine-700 mt-0.5 h-4 w-4 rounded"
           />
           I am under 18
         </label>
 
         {under18 && (
-          <div className="grid gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4 sm:grid-cols-2">
-            <p className="text-sm text-amber-900 sm:col-span-2">
+          <div className="border-marigold-200 bg-marigold-50 grid gap-5 rounded-2xl border p-5 sm:grid-cols-2">
+            <p className="text-marigold-700 text-sm sm:col-span-2">
               Indian data protection law needs a parent or guardian’s consent for anyone
-              under 18. We will contact them rather than you.
+              under 18. We’ll contact them rather than you.
             </p>
-            <div>
-              <label
-                htmlFor="guardianName"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Parent or guardian’s name
-              </label>
+            <Field
+              id="guardianName"
+              label="Parent or guardian’s name"
+              error={errors.guardianName}
+            >
               <input
                 id="guardianName"
                 name="guardianName"
                 defaultValue={values.guardianName}
-                className={input}
+                className="field"
               />
-              <FieldError message={errors.guardianName} />
-            </div>
-            <div>
-              <label
-                htmlFor="guardianPhone"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Their mobile number
-              </label>
+            </Field>
+            <Field
+              id="guardianPhone"
+              label="Their mobile number"
+              error={errors.guardianPhone}
+            >
               <input
                 id="guardianPhone"
                 name="guardianPhone"
                 defaultValue={values.guardianPhone}
                 inputMode="tel"
-                className={input}
+                className="field"
               />
-              <FieldError message={errors.guardianPhone} />
-            </div>
+            </Field>
           </div>
         )}
       </section>
 
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
-          What you are looking for
+      <section className="card space-y-5 p-6 sm:p-7">
+        <h2 className="font-display text-ink text-xl font-semibold">
+          What you’re looking for
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="city" className="block text-sm font-medium text-slate-700">
-              City
-            </label>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field id="city" label="City">
             <input
               id="city"
               name="city"
               list="enquiry-cities"
               defaultValue={values.city}
-              className={input}
+              className="field"
             />
             <datalist id="enquiry-cities">
               {cities.map((c) => (
                 <option key={c} value={c} />
               ))}
             </datalist>
-          </div>
-          <div>
-            <label
-              htmlFor="budget"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Monthly budget (₹)
-            </label>
+          </Field>
+          <Field id="budget" label="Monthly budget (₹)" error={errors.budget}>
             <input
               id="budget"
               name="budget"
               inputMode="numeric"
               defaultValue={values.budget}
               placeholder="15000"
-              className={input}
+              className="field"
             />
-            <FieldError message={errors.budget} />
-          </div>
-          <div>
-            <label
-              htmlFor="moveInDate"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Move-in date
-            </label>
+          </Field>
+          <Field id="moveInDate" label="Move-in date" error={errors.moveInDate}>
             <input
               id="moveInDate"
               name="moveInDate"
               type="date"
               defaultValue={values.moveInDate}
-              className={input}
+              className="field"
             />
-            <FieldError message={errors.moveInDate} />
-          </div>
-          <div>
-            <label
-              htmlFor="tenureMonths"
-              className="block text-sm font-medium text-slate-700"
-            >
-              How long
-            </label>
+          </Field>
+          <Field id="tenureMonths" label="How long">
             <select
               id="tenureMonths"
               name="tenureMonths"
               defaultValue={values.tenureMonths ?? ''}
-              className={input}
+              className="field"
             >
               <option value="">Not sure yet</option>
               <option value="3">3 months</option>
@@ -352,113 +324,94 @@ export function EnquiryForm({
               <option value="11">11 months</option>
               <option value="12">A year or more</option>
             </select>
-          </div>
-          <div>
-            <label
-              htmlFor="occupancy"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Room sharing
-            </label>
+          </Field>
+          <Field id="occupancy" label="Room sharing">
             <select
               id="occupancy"
               name="occupancy"
               defaultValue={values.occupancy ?? ''}
-              className={input}
+              className="field"
             >
               <option value="">No preference</option>
               <option value="1">Private room</option>
               <option value="2">Twin sharing</option>
               <option value="3">Triple sharing</option>
             </select>
-          </div>
-          <div>
-            <label
-              htmlFor="genderPolicy"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Accommodation type
-            </label>
+          </Field>
+          <Field id="genderPolicy" label="Accommodation type">
             <select
               id="genderPolicy"
               name="genderPolicy"
               defaultValue={values.genderPolicy ?? ''}
-              className={input}
+              className="field"
             >
               <option value="">No preference</option>
               <option value="female_only">Women-only</option>
               <option value="male_only">Men-only</option>
               <option value="any">Mixed is fine</option>
             </select>
-          </div>
-          <div>
-            <label
-              htmlFor="propertyType"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Kind of stay
-            </label>
+          </Field>
+          <Field id="propertyType" label="Kind of stay">
             <select
               id="propertyType"
               name="propertyType"
               defaultValue={values.propertyType ?? ''}
-              className={input}
+              className="field"
             >
               <option value="">Any</option>
               <option value="coliving">Co-living</option>
               <option value="pbsa">Student housing</option>
               <option value="homeshare">Home sharing</option>
             </select>
-          </div>
+          </Field>
         </div>
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-slate-700">
-            Anything else we should know
-          </label>
+        <Field id="notes" label="Anything else we should know">
           <textarea
             id="notes"
             name="notes"
             rows={3}
             defaultValue={values.notes}
             placeholder="e.g. close to campus, vegetarian food, need parking"
-            className={input}
+            className="field"
           />
-        </div>
+        </Field>
       </section>
 
-      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 text-sm">
-        <label className="flex items-start gap-2 text-slate-700">
+      <section className="card space-y-4 p-6 text-sm sm:p-7">
+        <label className="text-ink flex items-start gap-3">
           <input
             type="checkbox"
             name="consentContact"
             defaultChecked={values.consentContact === 'on'}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300"
+            className="border-line accent-pine-700 mt-0.5 h-4 w-4 rounded"
           />
           <span>{contactNotice}</span>
         </label>
         <FieldError message={errors.consentContact} />
-        <p className="pl-6 text-xs text-slate-500">{recordingNotice}</p>
-        <label className="flex items-start gap-2 text-slate-700">
+        <p className="text-ink-soft pl-7 text-xs leading-relaxed">{recordingNotice}</p>
+        <label className="text-ink flex items-start gap-3">
           <input
             type="checkbox"
             name="consentMarketing"
             defaultChecked={values.consentMarketing === 'on'}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300"
+            className="border-line accent-pine-700 mt-0.5 h-4 w-4 rounded"
           />
           <span>Send me new stays and offers (optional).</span>
         </label>
       </section>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-md bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60 sm:w-auto"
-      >
-        {pending ? 'Sending code…' : 'Continue — verify my number'}
-      </button>
-      <p className="text-xs text-slate-500">
-        Enquiring is free. We never share your number with an operator.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          disabled={pending}
+          className="btn-primary py-3.5 text-base sm:px-8"
+        >
+          {pending ? 'Sending code…' : 'Continue — verify my number'}
+        </button>
+        <p className="text-ink-soft text-sm">
+          Free. We never share your number with an operator.
+        </p>
+      </div>
     </form>
   );
 }

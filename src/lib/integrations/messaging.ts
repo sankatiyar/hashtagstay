@@ -190,7 +190,7 @@ async function dispatch(
     return { ok: true, provider: 'resend', providerMessageId: body.id ?? null };
   }
 
-  if (e.NODE_ENV !== 'production') {
+  if (e.NODE_ENV !== 'production' || e.DEMO_MODE) {
     console.info(`[dev-outbox] ${input.channel} → ${input.to}: ${input.templateKey}`);
     return { ok: true, provider: 'dev-outbox', providerMessageId: null };
   }

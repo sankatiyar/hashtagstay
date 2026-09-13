@@ -16,9 +16,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const input =
-  'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900';
-
 export default async function SupportPage() {
   const resident = await getCurrentResident();
   if (!resident) redirect('/account/login?next=/account/support');
@@ -29,121 +26,124 @@ export default async function SupportPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/account" className="text-sm text-slate-500 hover:underline">
+    <main className="container-page max-w-5xl py-10">
+      <Link
+        href="/account"
+        className="text-ink-soft hover:text-ink text-sm font-medium"
+      >
         ← Your account
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+      <h1 className="font-display text-pine-950 mt-3 text-4xl font-semibold tracking-tight">
         Help and safety
       </h1>
 
-      <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-        <p className="font-semibold">If you are in immediate danger, call 112.</p>
-        <p className="mt-1">
-          For any safety concern at a stay, raise it below as a safety request. Our team
-          responds within 15 minutes, at any hour.
-        </p>
+      <div className="mt-6 flex flex-col gap-4 rounded-3xl bg-red-50 p-6 ring-1 ring-red-200 sm:flex-row sm:items-center">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-600 text-lg font-bold text-white">
+          112
+        </span>
+        <div className="text-red-900">
+          <p className="font-semibold">If you are in immediate danger, call 112.</p>
+          <p className="mt-1 text-sm">
+            For any safety concern at a stay, raise it below as a safety request. Our
+            team responds within 15 minutes, at any hour.
+          </p>
+        </div>
       </div>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">Raise a request</h2>
-        <ActionForm
-          action={raiseTicketAction}
-          submitLabel="Send"
-          className="mt-3 space-y-3"
-        >
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-slate-700"
-            >
-              What is it about?
-            </label>
-            <select id="category" name="category" className={input}>
-              {TICKET_CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {bookings.length > 0 && (
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
+        <section className="card p-6">
+          <h2 className="font-display text-ink text-xl font-semibold">
+            Raise a request
+          </h2>
+          <ActionForm
+            action={raiseTicketAction}
+            submitLabel="Send request"
+            className="mt-5 space-y-4"
+          >
             <div>
-              <label
-                htmlFor="bookingId"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Which booking (optional)
+              <label htmlFor="category" className="label">
+                What is it about?
               </label>
-              <select id="bookingId" name="bookingId" className={input}>
-                <option value="">Not about a booking</option>
-                {bookings.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.propertyName} — {b.reference}
+              <select id="category" name="category" className="field">
+                {TICKET_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
                   </option>
                 ))}
               </select>
             </div>
-          )}
-          <div>
-            <label
-              htmlFor="subject"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Summary
-            </label>
-            <input id="subject" name="subject" className={input} />
-          </div>
-          <div>
-            <label htmlFor="body" className="block text-sm font-medium text-slate-700">
-              Details
-            </label>
-            <textarea id="body" name="body" rows={4} className={input} />
-          </div>
-        </ActionForm>
-      </section>
+            {bookings.length > 0 && (
+              <div>
+                <label htmlFor="bookingId" className="label">
+                  Which booking{' '}
+                  <span className="text-ink-soft font-normal">(optional)</span>
+                </label>
+                <select id="bookingId" name="bookingId" className="field">
+                  <option value="">Not about a booking</option>
+                  {bookings.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.propertyName} — {b.reference}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label htmlFor="subject" className="label">
+                Summary
+              </label>
+              <input id="subject" name="subject" className="field" />
+            </div>
+            <div>
+              <label htmlFor="body" className="label">
+                Details
+              </label>
+              <textarea id="body" name="body" rows={5} className="field" />
+            </div>
+          </ActionForm>
+        </section>
 
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-slate-900">Your requests</h2>
-        {tickets.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-600">None yet.</p>
-        ) : (
-          <ul className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
-            {tickets.map((ticket) => (
-              <li
-                key={ticket.id}
-                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
-              >
-                <div>
+        <section>
+          <h2 className="font-display text-ink text-xl font-semibold">Your requests</h2>
+          {tickets.length === 0 ? (
+            <p className="border-line text-ink-soft mt-4 rounded-2xl border border-dashed bg-white/60 px-5 py-6 text-sm">
+              None yet.
+            </p>
+          ) : (
+            <ul className="card divide-line mt-4 divide-y">
+              {tickets.map((ticket) => (
+                <li key={ticket.id}>
                   <Link
                     href={`/account/support/${ticket.id}`}
-                    className="font-medium text-slate-900 hover:underline"
+                    className="hover:bg-sand/60 flex flex-wrap items-center justify-between gap-2 px-5 py-4 transition"
                   >
-                    {ticket.subject}
+                    <div>
+                      <p className="text-ink font-semibold">{ticket.subject}</p>
+                      <p className="text-ink-soft text-sm">
+                        {ticket.reference} · {isoDate(ticket.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {ticket.priority === 'safety_critical' && (
+                        <Badge tone="danger">Safety</Badge>
+                      )}
+                      <Badge
+                        tone={
+                          ticket.state === 'resolved' || ticket.state === 'closed'
+                            ? 'muted'
+                            : 'info'
+                        }
+                      >
+                        {ticket.state.replaceAll('_', ' ')}
+                      </Badge>
+                    </div>
                   </Link>
-                  <p className="text-slate-600">
-                    {ticket.reference} · {isoDate(ticket.createdAt)}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {ticket.priority === 'safety_critical' && (
-                    <Badge tone="danger">Safety</Badge>
-                  )}
-                  <Badge
-                    tone={
-                      ticket.state === 'resolved' || ticket.state === 'closed'
-                        ? 'muted'
-                        : 'info'
-                    }
-                  >
-                    {ticket.state.replaceAll('_', ' ')}
-                  </Badge>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

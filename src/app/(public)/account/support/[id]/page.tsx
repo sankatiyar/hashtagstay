@@ -25,16 +25,19 @@ export default async function ResidentTicketPage(props: {
   if (!data || data.ticket.raisedByUserId !== resident.id) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <Link href="/account/support" className="text-sm text-slate-500 hover:underline">
+    <main className="container-page max-w-3xl py-10">
+      <Link
+        href="/account/support"
+        className="text-ink-soft hover:text-ink text-sm font-medium"
+      >
         ← Help and safety
       </Link>
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="font-display text-pine-950 text-3xl font-semibold tracking-tight">
             {data.ticket.subject}
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-ink-soft mt-1 text-sm">
             {data.ticket.reference}
             {data.propertyName && ` · ${data.propertyName}`}
           </p>
@@ -42,34 +45,43 @@ export default async function ResidentTicketPage(props: {
         <Badge tone="info">{data.ticket.state.replaceAll('_', ' ')}</Badge>
       </div>
 
-      <ol className="mt-6 space-y-3">
-        {data.messages.map((message) => (
-          <li
-            key={message.id}
-            className={`rounded-xl p-4 text-sm ${message.authorKind === 'staff' ? 'border border-slate-200 bg-white' : 'bg-slate-100'}`}
-          >
-            <p className="text-xs text-slate-500">
-              {message.authorKind === 'staff'
-                ? `HashtagStay${message.authorName ? ` · ${message.authorName.split(' ')[0]}` : ''}`
-                : 'You'}{' '}
-              · {message.createdAt.toISOString().slice(0, 16).replace('T', ' ')}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap text-slate-800">{message.body}</p>
-          </li>
-        ))}
+      <ol className="mt-8 space-y-4">
+        {data.messages.map((message) => {
+          const staff = message.authorKind === 'staff';
+          return (
+            <li
+              key={message.id}
+              className={`flex ${staff ? 'justify-start' : 'justify-end'}`}
+            >
+              <div
+                className={`max-w-[85%] rounded-3xl px-5 py-4 text-sm ${staff ? 'border-line rounded-bl-md border bg-white' : 'bg-pine-800 rounded-br-md text-white'}`}
+              >
+                <p className={`text-xs ${staff ? 'text-ink-soft' : 'text-pine-200'}`}>
+                  {staff
+                    ? `HashtagStay${message.authorName ? ` · ${message.authorName.split(' ')[0]}` : ''}`
+                    : 'You'}{' '}
+                  · {message.createdAt.toISOString().slice(0, 16).replace('T', ' ')}
+                </p>
+                <p className="mt-1.5 leading-relaxed whitespace-pre-wrap">
+                  {message.body}
+                </p>
+              </div>
+            </li>
+          );
+        })}
       </ol>
 
       {data.ticket.state !== 'closed' && (
         <ActionForm
           action={replyTicketAction}
           submitLabel="Send"
-          className="mt-6 space-y-3"
+          className="card mt-8 space-y-3 p-5"
         >
           <input type="hidden" name="ticketId" value={id} />
           <textarea
             name="body"
             rows={3}
-            className="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="field mt-0"
             placeholder="Add a message"
           />
         </ActionForm>

@@ -112,7 +112,8 @@ export async function requestOtp(params: {
     variables: { code },
   });
 
-  return serverEnv().NODE_ENV === 'production'
+  // A demo shows the code on screen, like development: no SMS vendor exists yet.
+  return serverEnv().NODE_ENV === 'production' && !serverEnv().DEMO_MODE
     ? { ok: true, destination }
     : { ok: true, destination, devCode: code };
 }

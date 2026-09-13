@@ -35,10 +35,26 @@ if (!url) {
 const isProduction = process.env.NODE_ENV === 'production';
 
 /**
- * Dev-only password, used for every seeded staff and host login. Never reaches
- * a real environment: the block that uses it is skipped in production.
+ * A public demo deployment (DEMO_MODE=true) gets sample inventory so there is
+ * something to click through, but never the dev password below: it is in a
+ * public repository, and on a public URL it would open the ops console to
+ * anyone. Demo staff logins are only created when SEED_STAFF_PASSWORD is set.
  */
+const isDemo = process.env.DEMO_MODE === 'true';
+
+/** Dev-only password for seeded staff logins. Used only outside production. */
 const DEV_PASSWORD = 'devpassword123';
+
+function staffPassword(): { value: string; fromEnv: boolean } | null {
+  const fromEnv = process.env.SEED_STAFF_PASSWORD;
+  if (fromEnv) {
+    if (fromEnv.length < 12) {
+      throw new Error('SEED_STAFF_PASSWORD must be at least 12 characters.');
+    }
+    return { value: fromEnv, fromEnv: true };
+  }
+  return isProduction ? null : { value: DEV_PASSWORD, fromEnv: false };
+}
 
 async function seedInstitutions(db: ReturnType<typeof drizzle>) {
   let count = 0;
@@ -148,9 +164,12 @@ async function seedFeeRules(db: ReturnType<typeof drizzle>) {
   }
 }
 
-/** Staff logins for development. Skipped in production. */
-async function seedDevStaff(db: ReturnType<typeof drizzle>) {
-  const passwordHash = await bcrypt.hash(DEV_PASSWORD, 10);
+/** Staff logins for development and demos. */
+async function seedDevStaff(
+  db: ReturnType<typeof drizzle>,
+  password: { value: string; fromEnv: boolean },
+) {
+  const passwordHash = await bcrypt.hash(password.value, 10);
 
   const staff = [
     { email: 'admin@hashtagstay.local', name: 'Dev Admin', roles: ['super_admin'] },
@@ -193,7 +212,9 @@ async function seedDevStaff(db: ReturnType<typeof drizzle>) {
         .onConflictDoNothing();
     }
   }
-  console.log(`  dev staff: ${staff.length} upserted (password: ${DEV_PASSWORD})`);
+  console.log(
+    `  staff logins: ${staff.length} upserted (password: ${password.fromEnv ? 'from SEED_STAFF_PASSWORD' : DEV_PASSWORD})`,
+  );
 }
 
 /**
@@ -453,11 +474,16 @@ async function main() {
     await seedInstitutions(db);
     await seedFeeRules(db);
 
-    if (isProduction) {
+    if (isProduction && !isDemo) {
       console.log('\nNODE_ENV=production — skipping dev staff and sample inventory.');
     } else {
-      console.log('\nSeeding development data...');
-      await seedDevStaff(db);
+      console.log(isDemo ? '\nSeeding demo data...' : '\nSeeding development data...');
+      const password = staffPassword();
+      if (password) {
+        await seedDevStaff(db, password);
+      } else {
+        console.log('  staff logins: skipped (set SEED_STAFF_PASSWORD to create them)');
+      }
       await seedDevInventory(db);
     }
 

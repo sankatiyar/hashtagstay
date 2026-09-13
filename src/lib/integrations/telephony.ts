@@ -40,7 +40,7 @@ export function telephonyProvider(): TelephonyProvider {
   ) {
     return 'exotel';
   }
-  if (e.NODE_ENV === 'production') {
+  if (e.NODE_ENV === 'production' && !e.DEMO_MODE) {
     throw new TelephonyError(
       'Click-to-call is not configured: set the TELEPHONY_* variables. Test-mode ' +
         'calling is disabled in production.',

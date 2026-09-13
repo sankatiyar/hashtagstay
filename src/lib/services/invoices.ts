@@ -54,7 +54,7 @@ function issuer(): {
       isTest: false,
     };
   }
-  if (e.NODE_ENV === 'production') {
+  if (e.NODE_ENV === 'production' && !e.DEMO_MODE) {
     throw new InvoiceError(
       'Invoicing is not configured: set COMPANY_GSTIN and COMPANY_STATE_CODE before issuing tax invoices.',
     );

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { LogoMark } from '@/components/public/brand';
 import { type Permission, can } from '@/lib/auth/permissions';
 import { getCurrentUser } from '@/lib/auth/session';
 
@@ -48,43 +49,60 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const items = NAV.filter(
     (item) => item.any.length === 0 || item.any.some((p) => can(user.roles, p)),
   );
+  const initials = (user.fullName ?? user.email ?? '?')
+    .split(/[\s@.]+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-line sticky top-0 z-40 border-b bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-          <Link
-            href="/admin"
-            className="font-semibold tracking-tight whitespace-nowrap text-slate-900"
-          >
-            #HashtagStay
-            <span className="ml-2 text-xs font-normal text-slate-400">ops</span>
+          <Link href="/admin" className="flex items-center gap-2.5 whitespace-nowrap">
+            <LogoMark className="h-8 w-8" />
+            <span className="font-display text-pine-900 text-lg font-semibold tracking-tight">
+              HashtagStay
+            </span>
+            <span className="bg-pine-50 text-pine-700 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase">
+              Ops
+            </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/admin/profile" className="text-right">
-              <p className="text-sm font-medium text-slate-900">
-                {user.fullName ?? user.email}
-              </p>
-              <p className="text-xs text-slate-500">
-                {user.roles.length > 0 ? user.roles.join(', ') : 'no roles assigned'}
-              </p>
+            <Link
+              href="/admin/profile"
+              className="hover:bg-sand flex items-center gap-3 rounded-full py-1 pr-1 pl-3 transition"
+            >
+              <span className="hidden text-right sm:block">
+                <span className="text-ink block text-sm font-semibold">
+                  {user.fullName ?? user.email}
+                </span>
+                <span className="text-ink-soft block text-xs">
+                  {user.roles.length > 0
+                    ? user.roles.join(', ').replaceAll('_', ' ')
+                    : 'no roles assigned'}
+                </span>
+              </span>
+              <span className="bg-pine-800 text-marigold-300 flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold">
+                {initials}
+              </span>
             </Link>
             <SignOutButton />
           </div>
         </div>
-        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-2">
+        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-2.5">
           {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              className="text-ink-soft hover:bg-pine-50 hover:text-pine-800 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition"
             >
               {item.label}
             </Link>
           ))}
         </nav>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
     </div>
   );
 }

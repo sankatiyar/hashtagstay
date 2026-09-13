@@ -76,6 +76,7 @@ export default async function NearCampusPage(props: {
     (min, row) => (min === null ? row.fromRentMinor : Math.min(min, row.fromRentMinor)),
     null,
   );
+  const nearest = rows[0]?.distanceMeters ?? null;
 
   const faqs = [
     {
@@ -102,95 +103,107 @@ export default async function NearCampusPage(props: {
     },
   ];
 
+  const cityPath = `/city/${campus.city.toLowerCase().replaceAll(' ', '-')}`;
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main>
       <script {...jsonLdScript(faqJsonLd(faqs))} />
       <script
         {...jsonLdScript(
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
-            {
-              name: campus.city,
-              path: `/city/${campus.city.toLowerCase().replaceAll(' ', '-')}`,
-            },
+            { name: campus.city, path: cityPath },
             { name: campus.name, path: `/near/${slug}` },
           ]),
         )}
       />
 
-      <nav aria-label="Breadcrumb" className="text-sm text-slate-500">
-        <Link href="/search" className="hover:underline">
-          Stays
-        </Link>
-        {' / '}
-        <Link
-          href={`/city/${campus.city.toLowerCase().replaceAll(' ', '-')}`}
-          className="hover:underline"
-        >
-          {campus.city}
-        </Link>
-      </nav>
-
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
-        PG and hostels near {campus.name}
-      </h1>
-      <p className="mt-2 max-w-2xl leading-relaxed text-slate-600">
-        {total > 0 ? (
-          <>
-            {total} verified {total === 1 ? 'stay' : 'stays'} within {RADIUS_KM} km of{' '}
-            {campus.name}
-            {cheapest !== null && (
+      <section className="border-line bg-pine-900 border-b text-white">
+        <div className="container-page py-14">
+          <nav aria-label="Breadcrumb" className="text-pine-200/80 text-sm">
+            <Link href="/search" className="hover:text-white">
+              Stays
+            </Link>{' '}
+            /{' '}
+            <Link href={cityPath} className="hover:text-white">
+              {campus.city}
+            </Link>
+          </nav>
+          <p className="text-marigold-300 mt-6 text-xs font-semibold tracking-[0.14em] uppercase">
+            Student housing
+          </p>
+          <h1 className="font-display mt-3 max-w-3xl text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+            PG and hostels near {campus.name}
+          </h1>
+          <p className="text-pine-100/85 mt-4 max-w-2xl text-lg leading-relaxed">
+            {total > 0 ? (
               <>
-                , starting from <strong>{format(money(cheapest, 'INR'))}</strong> per
-                month
+                {total} verified {total === 1 ? 'stay' : 'stays'} within {RADIUS_KM} km
+                {cheapest !== null && (
+                  <>, from {format(money(cheapest, 'INR'))} a month</>
+                )}
+                {nearest !== null && (
+                  <> — the closest is {(nearest / 1000).toFixed(1)} km away</>
+                )}
+                .
+              </>
+            ) : (
+              <>
+                We don’t have verified inventory near {campus.name} yet. Tell us what
+                you need and a relationship manager will look on your behalf.
               </>
             )}
-            .
-          </>
-        ) : (
-          <>
-            We do not have verified inventory near {campus.name} yet. We are adding
-            operators city by city — tell us what you need and a relationship manager
-            will look on your behalf.
-          </>
-        )}
-      </p>
+          </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link
-          href={`/search?near=${slug}&radius=${RADIUS_KM}`}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
-        >
-          Refine this search
-        </Link>
-        <Link
-          href={`/enquiry?near=${slug}`}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          Tell us what you need
-        </Link>
-      </div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href={`/enquiry?near=${slug}`} className="btn-accent">
+              Find me a stay near campus
+            </Link>
+            <Link
+              href={`/search?near=${slug}&radius=${RADIUS_KM}`}
+              className="btn border border-white/25 text-white hover:bg-white/10"
+            >
+              Refine this search
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {rows.length > 0 && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
+        <div className="container-page py-12">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
         </div>
       )}
 
-      <section className="mt-12 max-w-3xl">
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-          Common questions
-        </h2>
-        <dl className="mt-4 space-y-5">
-          {faqs.map((faq) => (
-            <div key={faq.question}>
-              <dt className="font-medium text-slate-900">{faq.question}</dt>
-              <dd className="mt-1 leading-relaxed text-slate-600">{faq.answer}</dd>
-            </div>
-          ))}
-        </dl>
+      <section className="container-page py-8">
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="eyebrow">Common questions</p>
+            <h2 className="font-display text-pine-950 mt-3 text-3xl font-semibold tracking-tight">
+              Before you book near {campus.name}
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <details
+                key={faq.question}
+                className="group card p-5 open:shadow-(--shadow-lift)"
+              >
+                <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">
+                  {faq.question}
+                  <span className="bg-sand text-pine-800 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="text-ink-soft mt-3 leading-relaxed">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
       </section>
     </main>
   );

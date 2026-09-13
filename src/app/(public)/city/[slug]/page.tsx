@@ -63,14 +63,14 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
   ]);
 
   const cityCampuses = campuses.filter((campus) => campus.city === city);
-
   const cheapest = rows.reduce<number | null>(
     (min, row) => (min === null ? row.fromRentMinor : Math.min(min, row.fromRentMinor)),
     null,
   );
+  const womenOnly = rows.filter((row) => row.genderPolicy === 'female_only').length;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main>
       <script
         {...jsonLdScript(
           breadcrumbJsonLd([
@@ -80,75 +80,110 @@ export default async function CityPage(props: { params: Promise<{ slug: string }
         )}
       />
 
-      <nav aria-label="Breadcrumb" className="text-sm text-slate-500">
-        <Link href="/search" className="hover:underline">
-          Stays
-        </Link>
-      </nav>
+      <section className="border-line relative overflow-hidden border-b">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(40rem_22rem_at_85%_0%,var(--color-marigold-100),transparent_65%)]"
+        />
+        <div className="container-page relative py-14">
+          <nav aria-label="Breadcrumb" className="text-ink-soft text-sm">
+            <Link href="/search" className="hover:text-ink">
+              Stays
+            </Link>{' '}
+            / <span className="text-ink">{city}</span>
+          </nav>
+          <h1 className="font-display text-pine-950 mt-4 max-w-3xl text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+            Co-living and student housing in {city}
+          </h1>
+          <p className="text-ink-soft mt-4 max-w-2xl text-lg leading-relaxed">
+            Every listing states which checks we completed and when they expire — and a
+            relationship manager re-confirms the bed before you pay anything.
+          </p>
 
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
-        Co-living and student housing in {city}
-      </h1>
-      <p className="mt-2 max-w-2xl leading-relaxed text-slate-600">
-        {total} verified {total === 1 ? 'stay' : 'stays'} in {city}
-        {cheapest !== null && (
+          <dl className="mt-8 flex flex-wrap gap-3">
+            <Pill label="verified stays" value={String(total)} />
+            {cheapest !== null && (
+              <Pill
+                label="lowest rent / month"
+                value={format(money(cheapest, 'INR'))}
+              />
+            )}
+            {womenOnly > 0 && <Pill label="women-only" value={String(womenOnly)} />}
+            {cityCampuses.length > 0 && (
+              <Pill label="campuses mapped" value={String(cityCampuses.length)} />
+            )}
+          </dl>
+
+          {cityCampuses.length > 0 && (
+            <div className="mt-8">
+              <p className="label">Search near a campus</p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {cityCampuses.map((campus) => (
+                  <li key={campus.slug}>
+                    <Link href={`/near/${campus.slug}`} className="chip">
+                      {campus.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="container-page py-12">
+        {rows.length === 0 ? (
+          <div className="card px-6 py-16 text-center">
+            <p className="font-display text-ink text-2xl font-semibold">
+              No verified inventory in {city} yet
+            </p>
+            <p className="text-ink-soft mx-auto mt-2 max-w-md">
+              We verify each property before it appears here. Tell us what you need and
+              a relationship manager will look on your behalf.
+            </p>
+            <Link
+              href={`/enquiry?city=${encodeURIComponent(city)}`}
+              className="btn-primary mt-6"
+            >
+              Find me a stay
+            </Link>
+          </div>
+        ) : (
           <>
-            , from <strong>{format(money(cheapest, 'INR'))}</strong> per month
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {rows.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} showDistance={false} />
+              ))}
+            </div>
+
+            <div className="mt-10 flex flex-wrap gap-3">
+              {total > rows.length && (
+                <Link
+                  href={`/search?city=${encodeURIComponent(city)}`}
+                  className="btn-secondary"
+                >
+                  See all {total} stays in {city}
+                </Link>
+              )}
+              <Link
+                href={`/enquiry?city=${encodeURIComponent(city)}`}
+                className="btn-primary"
+              >
+                Get help choosing in {city}
+              </Link>
+            </div>
           </>
         )}
-        . Every listing states which checks we completed and when they expire.
-      </p>
-
-      {cityCampuses.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-sm font-semibold text-slate-900">Search near a campus</h2>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {cityCampuses.map((campus) => (
-              <li key={campus.slug}>
-                <Link
-                  href={`/near/${campus.slug}`}
-                  className="inline-block rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
-                >
-                  {campus.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {rows.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-slate-300 p-10 text-center">
-          <p className="font-medium text-slate-800">
-            No verified inventory in {city} yet.
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-            We onboard operators city by city and verify each property before it appears
-            here.{' '}
-            <Link href="/enquiry" className="text-slate-900 underline">
-              Tell us what you need
-            </Link>{' '}
-            and a relationship manager will look on your behalf.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} showDistance={false} />
-            ))}
-          </div>
-
-          {total > rows.length && (
-            <Link
-              href={`/search?city=${encodeURIComponent(city)}`}
-              className="mt-6 inline-block rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              See all {total} stays in {city}
-            </Link>
-          )}
-        </>
-      )}
+      </div>
     </main>
+  );
+}
+
+function Pill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-line flex items-baseline gap-2 rounded-full border bg-white px-4 py-2 shadow-(--shadow-card)">
+      <dd className="font-display text-pine-900 text-lg font-semibold">{value}</dd>
+      <dt className="text-ink-soft text-sm">{label}</dt>
+    </div>
   );
 }

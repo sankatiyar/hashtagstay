@@ -2,18 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ListingCover } from '@/components/public/listing-cover';
 import { ActionForm } from '@/components/ui/action-form';
-import {
-  Badge,
-  VerificationBadge,
-  genderPolicyLabel,
-  propertyTypeLabel,
-} from '@/components/ui/badge';
+import { Badge, genderPolicyLabel, propertyTypeLabel } from '@/components/ui/badge';
 import { fileUrl } from '@/lib/integrations/storage';
 import { format, money } from '@/lib/money';
 import { getPublicShortlist, recordShortlistView } from '@/lib/services/shortlists';
 import { resolveAmenities } from '@/lib/taxonomy/amenities';
 import { isoDate } from '@/lib/time';
+import { TIER_LABELS, type VerificationTier } from '@/lib/verification/rubric';
 
 import { markInterest } from './actions';
 
@@ -30,17 +27,23 @@ export default async function ShortlistPage(props: {
   const data = await getPublicShortlist(token);
   if (!data) notFound();
 
+  const rmFirst = data.rmName?.split(' ')[0] ?? 'your relationship manager';
+
   if (data.expired) {
     return (
-      <main className="mx-auto max-w-xl px-4 py-12">
-        <h1 className="text-xl font-semibold text-slate-900">
-          This shortlist has expired
-        </h1>
-        <p className="mt-2 text-slate-600">
-          Prices and availability change, so shortlists are only held for a week. Ask{' '}
-          {data.rmName?.split(' ')[0] ?? 'your relationship manager'} for an updated
-          one.
-        </p>
+      <main className="container-page max-w-xl py-16">
+        <div className="card p-8">
+          <h1 className="font-display text-pine-950 text-3xl font-semibold">
+            This shortlist has expired
+          </h1>
+          <p className="text-ink-soft mt-3">
+            Prices and availability change, so shortlists are only held for a week. Ask{' '}
+            {rmFirst} for an updated one.
+          </p>
+          <Link href="/search" className="btn-secondary mt-6">
+            Browse stays meanwhile
+          </Link>
+        </div>
       </main>
     );
   }
@@ -49,27 +52,31 @@ export default async function ShortlistPage(props: {
   const first = data.contactName?.split(' ')[0];
   const covers = await Promise.all(
     data.items.map((item) =>
-      item.coverPath ? fileUrl('public', item.coverPath) : Promise.resolve(null),
+      item.coverPath
+        ? fileUrl('public', item.coverPath).catch(() => null)
+        : Promise.resolve(null),
     ),
   );
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-        {first ? `${first}, here are your stays` : 'Your shortlist'}
+    <main className="container-page max-w-5xl py-12">
+      <p className="eyebrow">Your shortlist</p>
+      <h1 className="font-display text-pine-950 mt-2 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+        {first ? `${first}, here are your stays` : 'Here are your stays'}
       </h1>
-      <p className="mt-2 text-slate-600">
-        Picked by {data.rmName?.split(' ')[0] ?? 'your relationship manager'} after
-        checking availability with each operator. Prices are held as quoted until{' '}
+      <p className="text-ink-soft mt-3 max-w-2xl text-lg">
+        Picked by <strong className="text-ink">{rmFirst}</strong> after checking
+        availability with each operator. Prices are held as quoted until{' '}
         {isoDate(data.shortlist.expiresAt)}.
       </p>
       {data.shortlist.message && (
-        <blockquote className="mt-4 rounded-lg border-l-4 border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-          {data.shortlist.message}
+        <blockquote className="bg-pine-800 mt-6 max-w-2xl rounded-3xl rounded-tl-md px-6 py-5 text-white">
+          <p className="leading-relaxed">“{data.shortlist.message}”</p>
+          <p className="text-pine-200 mt-2 text-sm">— {rmFirst}</p>
         </blockquote>
       )}
 
-      <ol className="mt-6 space-y-4">
+      <ol className="mt-10 space-y-6">
         {data.items.map((item, index) => {
           const priceChanged =
             item.currentRentAmountMinor !== null &&
@@ -78,38 +85,42 @@ export default async function ShortlistPage(props: {
           const safety = resolveAmenities(item.amenities)
             .filter((a) => a.isSafetySignal)
             .slice(0, 3);
+          const tier = item.verificationTier as VerificationTier;
           return (
             <li
               key={item.id}
-              className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+              className="card grid overflow-hidden md:grid-cols-[320px_1fr]"
             >
-              {covers[index] && (
-                // eslint-disable-next-line @next/next/no-img-element -- storage URLs vary by provider
-                <img
-                  src={covers[index]!}
+              <div className="relative h-56 md:h-full">
+                <ListingCover
+                  seed={item.propertySlug}
+                  photoUrl={covers[index]}
                   alt={item.propertyName}
-                  className="h-48 w-full object-cover"
                 />
-              )}
-              <div className="p-5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+                <span className="text-pine-900 absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-xs font-bold shadow">
+                  Option {index + 1}
+                </span>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs text-slate-500">Option {index + 1}</p>
-                    <h2 className="font-semibold text-slate-900">
+                    <h2 className="font-display text-ink text-2xl font-semibold">
                       {item.propertyName}
                     </h2>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-ink-soft mt-0.5">
                       {item.locality ? `${item.locality}, ` : ''}
                       {item.city}
                       {item.roomName && ` · ${item.roomName}`}
                     </p>
                   </div>
-                  <VerificationBadge tier={item.verificationTier} />
+                  {tier !== 'none' && (
+                    <Badge tone="success">{TIER_LABELS[tier] ?? tier}</Badge>
+                  )}
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <Badge tone="neutral">{propertyTypeLabel(item.propertyType)}</Badge>
-                  <Badge tone="info">{genderPolicyLabel(item.genderPolicy)}</Badge>
+                  <Badge tone="neutral">{genderPolicyLabel(item.genderPolicy)}</Badge>
                   {safety.map((a) => (
                     <Badge key={a.slug} tone="success">
                       {a.label}
@@ -117,39 +128,35 @@ export default async function ShortlistPage(props: {
                   ))}
                 </div>
 
-                {item.quotedRentAmountMinor !== null && (
-                  <p className="mt-3 text-lg font-semibold text-slate-900">
-                    {format(money(item.quotedRentAmountMinor, 'INR'))}
-                    <span className="text-sm font-normal text-slate-500">
-                      {' '}
-                      / month quoted
-                    </span>
-                  </p>
-                )}
-                {item.quotedDepositAmountMinor !== null && (
-                  <p className="text-sm text-slate-600">
-                    Deposit {format(money(item.quotedDepositAmountMinor, 'INR'))}
-                  </p>
-                )}
+                <div className="mt-5 flex flex-wrap items-end gap-x-6 gap-y-1">
+                  {item.quotedRentAmountMinor !== null && (
+                    <p className="text-ink text-2xl font-bold tracking-tight">
+                      {format(money(item.quotedRentAmountMinor, 'INR'))}
+                      <span className="text-ink-soft text-sm font-normal">
+                        {' '}
+                        / month quoted
+                      </span>
+                    </p>
+                  )}
+                  {item.quotedDepositAmountMinor !== null && (
+                    <p className="text-ink-soft text-sm">
+                      Deposit {format(money(item.quotedDepositAmountMinor, 'INR'))}
+                    </p>
+                  )}
+                </div>
                 {priceChanged && (
-                  <p className="mt-1 text-xs text-amber-800">
+                  <p className="text-marigold-700 mt-2 text-xs">
                     The operator’s listed price has changed since this was quoted. Your
                     relationship manager will confirm.
                   </p>
                 )}
                 {item.rmNote && (
-                  <p className="mt-3 text-sm text-slate-700">“{item.rmNote}”</p>
+                  <p className="bg-sand text-ink mt-4 rounded-2xl px-4 py-3 text-sm">
+                    <span className="font-semibold">{rmFirst}:</span> “{item.rmNote}”
+                  </p>
                 )}
 
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  {item.propertyState === 'live' && (
-                    <Link
-                      href={`/stays/${item.propertySlug}`}
-                      className="text-sm text-slate-700 underline"
-                    >
-                      Full details
-                    </Link>
-                  )}
+                <div className="border-line mt-6 flex flex-wrap items-center gap-3 border-t pt-5">
                   {item.residentInterest ? (
                     <Badge
                       tone={
@@ -157,7 +164,7 @@ export default async function ShortlistPage(props: {
                       }
                     >
                       {item.residentInterest === 'interested'
-                        ? 'You are interested'
+                        ? 'You’re interested — we’ll be in touch'
                         : 'Not for you'}
                     </Badge>
                   ) : (
@@ -183,6 +190,14 @@ export default async function ShortlistPage(props: {
                       </ActionForm>
                     </>
                   )}
+                  {item.propertyState === 'live' && (
+                    <Link
+                      href={`/stays/${item.propertySlug}`}
+                      className="text-pine-700 ml-auto text-sm font-semibold hover:underline"
+                    >
+                      Full details →
+                    </Link>
+                  )}
                 </div>
               </div>
             </li>
@@ -190,10 +205,9 @@ export default async function ShortlistPage(props: {
         })}
       </ol>
 
-      <p className="mt-6 text-sm text-slate-600">
-        Questions? Reply to the message that brought you here and your relationship
-        manager will call you back. For everyone’s safety we never share operators’
-        personal numbers.
+      <p className="text-ink-soft mt-10 max-w-2xl text-sm">
+        Questions? Reply to the message that brought you here and {rmFirst} will call
+        you back. For everyone’s safety we never share operators’ personal numbers.
       </p>
     </main>
   );

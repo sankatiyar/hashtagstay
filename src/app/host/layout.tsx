@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { LogoMark } from '@/components/public/brand';
 import { hostMemberships } from '@/lib/auth/host';
 import { getCurrentUser } from '@/lib/auth/session';
 
@@ -24,45 +25,47 @@ export default async function HostLayout({ children }: { children: ReactNode }) 
   const memberships = await hostMemberships(user.id);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="bg-paper min-h-screen">
+      <header className="border-line sticky top-0 z-40 border-b bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Link href="/host" className="font-semibold tracking-tight text-slate-900">
-            #HashtagStay
-            <span className="ml-2 text-xs font-normal text-slate-400">host</span>
+          <Link href="/host" className="flex items-center gap-2.5">
+            <LogoMark className="h-8 w-8" />
+            <span className="font-display text-pine-900 text-lg font-semibold tracking-tight">
+              HashtagStay
+            </span>
+            <span className="bg-marigold-100 text-marigold-700 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide uppercase">
+              Host
+            </span>
           </Link>
-          <nav className="flex gap-1 overflow-x-auto">
+          <nav className="order-last flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
             {NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-slate-600 hover:bg-slate-100"
+                className="text-ink-soft hover:bg-pine-50 hover:text-pine-800 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <p className="text-right text-sm">
-              <span className="block font-medium text-slate-900">
+            <p className="hidden text-right text-sm md:block">
+              <span className="text-ink block font-semibold">
                 {user.fullName ?? user.email}
               </span>
-              <span className="block text-xs text-slate-500">
+              <span className="text-ink-soft block text-xs">
                 {memberships[0]?.organizationName}
               </span>
             </p>
             <form action={hostSignOut}>
-              <button
-                type="submit"
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
-              >
+              <button type="submit" className="btn-secondary px-4 py-2">
                 Sign out
               </button>
             </form>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export class PaymentProviderError extends Error {
 export function paymentProvider(): PaymentProvider {
   const e = serverEnv();
   if (e.RAZORPAY_KEY_ID && e.RAZORPAY_KEY_SECRET) return 'razorpay';
-  if (e.NODE_ENV === 'production') {
+  if (e.NODE_ENV === 'production' && !e.DEMO_MODE) {
     throw new PaymentProviderError(
       'Payments are not configured: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET. ' +
         'Test-mode payments are disabled in production.',

@@ -160,6 +160,20 @@ const serverSchema = z.object({
    * the user never saw (DPDP).
    */
   PRIVACY_POLICY_VERSION: blankable(z.string().min(1).default('2026-09-01')),
+
+  /**
+   * Public demo deployment. Lets a production build use the test vendor
+   * adapters — outbox messages, test payments, on-screen OTP codes, the TEST
+   * invoice series — so the whole journey can be clicked through before the
+   * vendors are procured. Every such screen says so. Never set on the real
+   * launch: `isLiveProduction()` is what keeps test paths out of it.
+   */
+  DEMO_MODE: blankable(z.enum(['true', 'false']).default('false')).transform(
+    (value) => value === 'true',
+  ),
+
+  /** Bearer token Vercel Cron sends to /api/cron/run. */
+  CRON_SECRET: optional(z.string().min(16)),
 });
 
 const clientSchema = z.object({
@@ -239,6 +253,15 @@ export function serverEnv(): ServerEnv {
   }
   cachedServerEnv ??= parseOrThrow(serverSchema, process.env, 'server');
   return cachedServerEnv;
+}
+
+/**
+ * True only on the real production site, where test vendor modes are refused.
+ * A production build with DEMO_MODE on is a demo, not the live site.
+ */
+export function isLiveProduction(): boolean {
+  const e = serverEnv();
+  return e.NODE_ENV === 'production' && !e.DEMO_MODE;
 }
 
 /** The connection string migrations should use. */

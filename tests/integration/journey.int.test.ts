@@ -95,6 +95,17 @@ beforeAll(async () => {
   `;
   otherOrgId = other.id;
 
+  // Fee rules scoped to this test's operator, at a priority above any global
+  // default. The CI migrations job runs against an unseeded database, and a
+  // booking cannot be created without a facilitation fee rule. They cascade
+  // away with the organization.
+  await client`
+    INSERT INTO fee_rules (kind, payer, basis, flat_amount_minor, flat_currency, rate_bps, tax_rate_bps, organization_id, priority)
+    VALUES
+      ('facilitation_fee', 'resident', 'flat', 9900, 'INR', NULL, 1800, ${orgId}, 100),
+      ('renting_commission', 'host', 'percent_of_monthly_rent', NULL, NULL, 800, 1800, ${orgId}, 100)
+  `;
+
   const [property] = await client<{ id: string }[]>`
     INSERT INTO properties
       (organization_id, name, slug, property_type, address_line1, locality, city, state,

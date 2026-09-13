@@ -9,6 +9,20 @@ import { type ActionResult, initialActionResult } from '@/lib/action-result';
  * Save-to-shortlist toggle (FR-04). Signed-out visitors get a sign-in link
  * rather than a button that fails, since a saved stay needs an account to live in.
  */
+function Heart({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        d="M12 20s-7.5-4.6-9.2-9.1C1.6 7.6 3.9 4.5 7.2 4.5c2 0 3.5 1.1 4.8 2.8 1.3-1.7 2.8-2.8 4.8-2.8 3.3 0 5.6 3.1 4.4 6.4C19.5 15.4 12 20 12 20Z"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function WishlistButton({
   propertyId,
   saved,
@@ -28,26 +42,38 @@ export function WishlistButton({
     return (
       <Link
         href={`/account/login?next=${encodeURIComponent(returnTo)}`}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+        className="btn-secondary w-full"
       >
-        ♡ Save
+        <Heart filled={false} /> Save
       </Link>
     );
   }
 
   const isSaved = state.ok ? state.ok.startsWith('Saved') : saved;
   return (
-    <form action={formAction}>
+    <form action={formAction} className="w-full">
       <input type="hidden" name="propertyId" value={propertyId} />
       <button
         type="submit"
         disabled={pending}
         aria-pressed={isSaved}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+        className={`btn-secondary w-full ${isSaved ? 'border-clay-500/40 text-clay-500' : ''}`}
       >
-        {isSaved ? '♥ Saved' : '♡ Save'}
+        <Heart filled={isSaved} /> {isSaved ? 'Saved' : 'Save for later'}
       </button>
-      {state.error && <p className="mt-1 text-xs text-red-700">{state.error}</p>}
+      {state.error && (
+        <p className="mt-2 text-center text-xs text-red-700">
+          {state.error}{' '}
+          {state.error.toLowerCase().includes('sign in') && (
+            <Link
+              href={`/account/login?next=${encodeURIComponent(returnTo)}`}
+              className="font-semibold underline"
+            >
+              Sign in
+            </Link>
+          )}
+        </p>
+      )}
     </form>
   );
 }

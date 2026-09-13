@@ -7,13 +7,10 @@ import { type ActionResult, initialActionResult } from '@/lib/action-result';
 type Tone = 'primary' | 'secondary' | 'danger' | 'link';
 
 const BUTTON: Record<Tone, string> = {
-  primary:
-    'rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800',
-  secondary:
-    'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100',
-  danger:
-    'rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50',
-  link: 'text-sm text-slate-600 underline hover:text-slate-900',
+  primary: 'btn-primary px-4 py-2',
+  secondary: 'btn-secondary px-4 py-2',
+  danger: 'btn border border-red-200 bg-white px-4 py-2 text-red-700 hover:bg-red-50',
+  link: 'text-sm font-medium text-pine-700 underline-offset-2 hover:underline',
 };
 
 /**
@@ -66,7 +63,7 @@ export function ActionForm({
           </p>
         )}
         {state.ok && !pending && (
-          <p aria-live="polite" className="text-xs text-emerald-700">
+          <p aria-live="polite" className="text-pine-700 text-xs font-medium">
             {state.ok}
           </p>
         )}

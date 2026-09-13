@@ -6,6 +6,12 @@
  * and a crawler can follow it — which matters on the page the whole SEO funnel
  * lands on.
  */
+const fieldShell =
+  'group relative flex flex-col justify-center rounded-2xl px-4 py-2.5 transition hover:bg-sand/70 focus-within:bg-sand/70';
+const fieldLabel = 'text-[0.7rem] font-semibold tracking-wide text-ink uppercase';
+const control =
+  'mt-0.5 w-full appearance-none bg-transparent text-sm text-ink-soft outline-none focus:text-ink';
+
 export function HeroSearch({
   cities,
   campuses,
@@ -17,97 +23,67 @@ export function HeroSearch({
     <form
       action="/search"
       method="get"
-      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+      className="rounded-3xl border border-line bg-white p-2 shadow-(--shadow-lift)"
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <label
-            htmlFor="hero-city"
-            className="block text-xs font-medium text-slate-600"
-          >
-            City
-          </label>
-          <select
-            id="hero-city"
-            name="city"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900"
-          >
+      {/* One row only at xl: in the hero's half-width column, five fields in a
+          row squeeze the labels onto two lines. */}
+      <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-[1fr_1.3fr_1fr_1fr_auto] xl:items-stretch xl:divide-x xl:divide-line">
+        <label className={fieldShell}>
+          <span className={fieldLabel}>City</span>
+          <select name="city" className={control} defaultValue="">
             <option value="">Any city</option>
             {cities.map((entry) => (
               <option key={entry.city} value={entry.city}>
-                {entry.city} ({entry.listingCount})
+                {entry.city} · {entry.listingCount} stays
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
-        <div>
-          <label
-            htmlFor="hero-near"
-            className="block text-xs font-medium text-slate-600"
-          >
-            Near a campus
-          </label>
-          <select
-            id="hero-near"
-            name="near"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900"
-          >
-            <option value="">Anywhere</option>
+        <label className={fieldShell}>
+          <span className={fieldLabel}>Near a campus</span>
+          <select name="near" className={control} defaultValue="">
+            <option value="">Anywhere in the city</option>
             {campuses.map((campus) => (
               <option key={campus.slug} value={campus.slug}>
                 {campus.name}
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
-        <div>
-          <label
-            htmlFor="hero-budget"
-            className="block text-xs font-medium text-slate-600"
-          >
-            Monthly budget
-          </label>
-          <div className="relative mt-1">
-            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-slate-400">
-              ₹
-            </span>
+        <label className={fieldShell}>
+          <span className={fieldLabel}>Budget / month</span>
+          <span className="mt-0.5 flex items-center gap-1 text-sm text-ink-soft">
+            ₹
             <input
-              id="hero-budget"
               name="budget"
               inputMode="numeric"
-              placeholder="15,000"
-              className="w-full rounded-lg border border-slate-300 py-2.5 pr-3 pl-7 text-sm outline-none focus:border-slate-900"
+              placeholder="Up to 15,000"
+              className="w-full bg-transparent text-ink outline-none placeholder:text-ink-soft"
             />
-          </div>
-        </div>
+          </span>
+        </label>
 
-        <div>
-          <label
-            htmlFor="hero-gender"
-            className="block text-xs font-medium text-slate-600"
-          >
-            Looking for
-          </label>
-          <select
-            id="hero-gender"
-            name="gender"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900"
-          >
+        <label className={fieldShell}>
+          <span className={fieldLabel}>Looking for</span>
+          <select name="gender" className={control} defaultValue="">
             <option value="">No preference</option>
             <option value="female_only">Women-only</option>
             <option value="male_only">Men-only</option>
           </select>
+        </label>
+
+        <div className="flex items-center p-1 sm:col-span-2 xl:col-span-1 xl:border-l-0 xl:pl-2">
+          <button type="submit" className="btn-primary w-full gap-2.5 py-3.5 xl:w-auto xl:px-7">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2.4" />
+              <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            </svg>
+            Search
+          </button>
         </div>
       </div>
-
-      <button
-        type="submit"
-        className="mt-4 w-full rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto sm:px-8"
-      >
-        Search verified stays
-      </button>
     </form>
   );
 }

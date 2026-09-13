@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ListingCover } from '@/components/public/listing-cover';
 import { ActionForm } from '@/components/ui/action-form';
 import { format, money } from '@/lib/money';
 import { getPaymentPage } from '@/lib/services/payments';
@@ -25,110 +26,153 @@ export default async function PayPage(props: { params: Promise<{ token: string }
   const paid = ['captured', 'refunded', 'partially_refunded'].includes(payment.state);
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-        {paid ? 'Booking confirmed' : 'Secure your room'}
+    <main className="container-page max-w-4xl py-12">
+      <p className="eyebrow">Booking {booking.reference}</p>
+      <h1 className="font-display text-pine-950 mt-2 text-4xl font-semibold tracking-tight">
+        {paid ? 'Your booking is confirmed' : 'Secure your room'}
       </h1>
-      <p className="mt-1 text-sm text-slate-600">Booking {booking.reference}</p>
-
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <p className="font-medium text-slate-900">{page.propertyName}</p>
-        <p className="text-sm text-slate-600">
-          {page.roomName ?? 'Room'} · {page.city} · move-in{' '}
-          {isoDate(booking.moveInDate)} · {booking.tenureMonths} months
+      {!paid && (
+        <p className="text-ink-soft mt-3 max-w-2xl">
+          The operator has confirmed your bed. Pay HashtagStay’s booking fee to lock it
+          in — rent and deposit are paid to the operator directly.
         </p>
-        <p className="mt-2 text-sm text-slate-600">
-          Agreed rent {format(money(booking.monthlyRentAmountMinor, 'INR'))}/month
-          {booking.depositAmountMinor !== null && (
-            <>, deposit {format(money(booking.depositAmountMinor, 'INR'))}</>
-          )}
-          . Rent and deposit are paid directly to the operator, not to HashtagStay.
-        </p>
-      </section>
+      )}
 
-      <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
-          HashtagStay facilitation fee
-        </h2>
-        <dl className="mt-3 space-y-1.5 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-slate-600">Fee</dt>
-            <dd className="text-slate-900">{inr(gst.taxableMinor)}</dd>
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_380px]">
+        <section className="card overflow-hidden">
+          <div className="h-44">
+            <ListingCover seed={booking.reference} alt={page.propertyName} />
           </div>
-          {gst.supplyType === 'intra_state' ? (
-            <>
-              <div className="flex justify-between">
-                <dt className="text-slate-600">CGST ({gst.taxRateBps / 200}%)</dt>
-                <dd className="text-slate-900">{inr(gst.cgstMinor)}</dd>
+          <div className="p-6">
+            <p className="font-display text-ink text-2xl font-semibold">
+              {page.propertyName}
+            </p>
+            <p className="text-ink-soft mt-1">
+              {page.roomName ?? 'Room'} · {page.city}
+            </p>
+            <dl className="border-line mt-5 grid grid-cols-2 gap-4 border-t pt-5 text-sm sm:grid-cols-4">
+              <Detail label="Move-in" value={isoDate(booking.moveInDate) ?? '—'} />
+              <Detail label="Stay" value={`${booking.tenureMonths} months`} />
+              <Detail
+                label="Rent"
+                value={`${format(money(booking.monthlyRentAmountMinor, 'INR'))}/mo`}
+              />
+              <Detail
+                label="Deposit"
+                value={
+                  booking.depositAmountMinor !== null
+                    ? format(money(booking.depositAmountMinor, 'INR'))
+                    : '—'
+                }
+              />
+            </dl>
+            <p className="text-ink-soft mt-4 text-xs">
+              Rent and deposit are paid directly to the operator, not to HashtagStay.
+            </p>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="card p-6">
+            <h2 className="text-ink font-semibold">HashtagStay booking fee</h2>
+            <dl className="mt-4 space-y-2 text-sm">
+              <Line label="Fee" value={inr(gst.taxableMinor)} />
+              {gst.supplyType === 'intra_state' ? (
+                <>
+                  <Line
+                    label={`CGST (${gst.taxRateBps / 200}%)`}
+                    value={inr(gst.cgstMinor)}
+                  />
+                  <Line
+                    label={`SGST (${gst.taxRateBps / 200}%)`}
+                    value={inr(gst.sgstMinor)}
+                  />
+                </>
+              ) : (
+                <Line
+                  label={`IGST (${gst.taxRateBps / 100}%)`}
+                  value={inr(gst.igstMinor)}
+                />
+              )}
+              <div className="border-line text-ink flex justify-between border-t pt-3 text-base font-bold">
+                <dt>Total</dt>
+                <dd>{inr(payment.grossAmountMinor)}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-600">SGST ({gst.taxRateBps / 200}%)</dt>
-                <dd className="text-slate-900">{inr(gst.sgstMinor)}</dd>
-              </div>
-            </>
-          ) : (
-            <div className="flex justify-between">
-              <dt className="text-slate-600">IGST ({gst.taxRateBps / 100}%)</dt>
-              <dd className="text-slate-900">{inr(gst.igstMinor)}</dd>
+            </dl>
+          </div>
+
+          {paid ? (
+            <div className="bg-pine-800 rounded-3xl p-6 text-white">
+              <p className="font-semibold">
+                {payment.state === 'captured' ? 'Paid' : 'Paid and since refunded'} on{' '}
+                {isoDate(payment.paidAt)}.
+              </p>
+              <p className="text-pine-100/85 mt-2 text-sm">
+                Your relationship manager will share move-in details. A GST invoice has
+                been issued for this fee.
+              </p>
+              <Link href="/account" className="btn-accent mt-5">
+                View your bookings
+              </Link>
             </div>
-          )}
-          <div className="flex justify-between border-t border-slate-100 pt-2 font-semibold">
-            <dt className="text-slate-900">Total</dt>
-            <dd className="text-slate-900">{inr(payment.grossAmountMinor)}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <div className="mt-6">
-        {paid ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
-            <p className="font-medium">
-              {payment.state === 'captured' ? 'Paid' : 'Paid and since refunded'} on{' '}
-              {isoDate(payment.paidAt)}.
-            </p>
-            <p className="mt-1">
-              Your relationship manager will share move-in details. A GST invoice has
-              been issued for this fee.
-            </p>
-            <Link href="/account" className="mt-3 inline-block underline">
-              View your bookings
-            </Link>
-          </div>
-        ) : payment.state === 'failed' ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            This payment link is no longer active
-            {payment.failureReason ? ` (${payment.failureReason.toLowerCase()})` : ''}.
-            Ask your relationship manager to send a new one.
-          </div>
-        ) : page.provider === 'razorpay' && payment.paymentLinkUrl ? (
-          <a
-            href={payment.paymentLinkUrl}
-            className="block rounded-md bg-slate-900 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Pay {inr(payment.grossAmountMinor)} securely
-          </a>
-        ) : page.provider === 'test' ? (
-          <div className="space-y-3 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-5">
-            <p className="text-sm text-amber-900">
-              Test mode — no payment provider is configured, so no money moves. This
-              button runs the same confirmation, invoicing and notifications a real
-              payment would.
-            </p>
-            <ActionForm
-              action={payInTestMode}
-              submitLabel={`Pay ${inr(payment.grossAmountMinor)} (test)`}
-              pendingLabel="Processing…"
+          ) : payment.state === 'failed' ? (
+            <div className="bg-marigold-50 text-marigold-700 ring-marigold-200 rounded-3xl p-6 text-sm ring-1">
+              This payment link is no longer active
+              {payment.failureReason ? ` (${payment.failureReason.toLowerCase()})` : ''}
+              . Ask your relationship manager to send a new one.
+            </div>
+          ) : page.provider === 'razorpay' && payment.paymentLinkUrl ? (
+            <a
+              href={payment.paymentLinkUrl}
+              className="btn-primary w-full py-4 text-base"
             >
-              <input type="hidden" name="token" value={token} />
-            </ActionForm>
-          </div>
-        ) : (
-          <p className="text-sm text-slate-600">
-            Online payment is not available right now. Please contact your relationship
-            manager.
+              Pay {inr(payment.grossAmountMinor)} securely
+            </a>
+          ) : page.provider === 'test' ? (
+            <div className="border-marigold-300 bg-marigold-50 space-y-4 rounded-3xl border border-dashed p-6">
+              <p className="text-marigold-700 text-sm">
+                Demo mode — no payment provider is connected, so no money moves. This
+                runs the same confirmation, invoicing and notifications a real payment
+                would.
+              </p>
+              <ActionForm
+                action={payInTestMode}
+                submitLabel={`Pay ${inr(payment.grossAmountMinor)} (demo)`}
+                pendingLabel="Processing…"
+              >
+                <input type="hidden" name="token" value={token} />
+              </ActionForm>
+            </div>
+          ) : (
+            <p className="card text-ink-soft p-6 text-sm">
+              Online payment isn’t available right now. Please contact your relationship
+              manager.
+            </p>
+          )}
+
+          <p className="text-ink-soft px-2 text-xs">
+            Refunds follow the cancellation policy your relationship manager shared.
           </p>
-        )}
+        </section>
       </div>
     </main>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-ink-soft text-xs">{label}</dt>
+      <dd className="text-ink mt-0.5 font-semibold">{value}</dd>
+    </div>
+  );
+}
+
+function Line({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <dt className="text-ink-soft">{label}</dt>
+      <dd className="text-ink">{value}</dd>
+    </div>
   );
 }
