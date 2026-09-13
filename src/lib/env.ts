@@ -264,7 +264,14 @@ function withPlatformFallbacks(
     DATABASE_URL: runtimeDatabaseUrl(source),
     DATABASE_URL_DIRECT: directDatabaseUrl(source),
     SUPABASE_SECRET_KEY: source.SUPABASE_SECRET_KEY || source.SUPABASE_SERVICE_ROLE_KEY,
-    AUTH_SECRET: source.AUTH_SECRET || source.SUPABASE_JWT_SECRET,
+    // AUTH_SECRET only keys the HMAC on one-time codes (lib/services/otp), so
+    // any long server-only secret the integration provides will do. Newer
+    // integrations set SUPABASE_SECRET_KEY rather than a JWT secret.
+    AUTH_SECRET:
+      source.AUTH_SECRET ||
+      source.SUPABASE_JWT_SECRET ||
+      source.SUPABASE_SECRET_KEY ||
+      source.SUPABASE_SERVICE_ROLE_KEY,
     DEMO_MODE: source.DEMO_MODE || (source.VERCEL ? 'true' : undefined),
   };
 }
