@@ -67,6 +67,7 @@ async function makeProperty(opts: {
   bedsFree?: number;
   verificationTier?: string;
   orgId: string;
+  city?: string;
 }) {
   const slug = `${opts.name.toLowerCase().replaceAll(' ', '-')}-${SUFFIX}`;
   const [property] = await client<{ id: string }[]>`
@@ -75,7 +76,7 @@ async function makeProperty(opts: {
        listing_state, gender_policy, verification_tier, amenities, location)
     VALUES (
       ${opts.orgId}, ${opts.name}, ${slug},
-      ${opts.propertyType ?? 'coliving'}, '1 Road', ${CITY},
+      ${opts.propertyType ?? 'coliving'}, '1 Road', ${opts.city ?? CITY},
       ${opts.listingState}, ${opts.genderPolicy ?? 'any'},
       ${opts.verificationTier ?? 'documents_checked'},
       ${client.json(opts.amenities ?? [])},
@@ -453,5 +454,66 @@ describe('nearbyInstitutions()', () => {
 
   it('returns nothing for a property with no coordinate', async () => {
     expect(await nearbyInstitutions(null)).toEqual([]);
+  });
+});
+
+describe('campus catchments (nearestCampusOnly)', () => {
+  // Far from every seeded campus, so only these two fixtures compete. Its own
+  // city keeps the per-city counts asserted above unaffected.
+  const CAMPUS_A = { lat: 21.1458, lng: 79.0882 };
+  const CAMPUS_B = { lat: 21.1458, lng: 79.1082 }; // ~2.1 km east of A
+  const BETWEEN = { lat: 21.1458, lng: 79.0952 }; // ~0.7 km from A, ~1.4 km from B
+  const catchmentCity = `Catchment ${SUFFIX}`;
+  const slugA = `catchment-a-${SUFFIX}`;
+  const slugB = `catchment-b-${SUFFIX}`;
+
+  beforeAll(async () => {
+    const [org] = await client<{ id: string }[]>`
+      SELECT id FROM organizations WHERE slug = ${'org-' + SUFFIX}
+    `;
+    for (const [slug, point] of [
+      [slugA, CAMPUS_A],
+      [slugB, CAMPUS_B],
+    ] as const) {
+      await client`
+        INSERT INTO institutions (name, slug, city, location, is_published)
+        VALUES (${slug}, ${slug}, ${catchmentCity},
+                ST_SetSRID(ST_MakePoint(${point.lng}, ${point.lat}), 4326), true)
+      `;
+    }
+    await makeProperty({
+      name: 'Catchment Between',
+      listingState: 'live',
+      ...BETWEEN,
+      rent: 1_000_000,
+      orgId: org.id,
+      city: catchmentCity,
+    });
+  });
+
+  it('lists a listing only on the page of the campus it is nearest to', async () => {
+    const a = await searchListings({
+      institutionSlug: slugA,
+      radiusKm: 5,
+      nearestCampusOnly: true,
+      pageSize: 48,
+    });
+    const b = await searchListings({
+      institutionSlug: slugB,
+      radiusKm: 5,
+      nearestCampusOnly: true,
+      pageSize: 48,
+    });
+    expect(a.rows.map((r) => r.name)).toContain('Catchment Between');
+    expect(b.rows.map((r) => r.name)).not.toContain('Catchment Between');
+  });
+
+  it('still finds it by radius from the other campus when not restricted', async () => {
+    const { rows } = await searchListings({
+      institutionSlug: slugB,
+      radiusKm: 5,
+      pageSize: 48,
+    });
+    expect(rows.map((r) => r.name)).toContain('Catchment Between');
   });
 });

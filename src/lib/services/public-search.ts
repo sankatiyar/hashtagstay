@@ -44,6 +44,12 @@ export interface SearchFilters {
   /** Slug of an institution to measure distance from. */
   institutionSlug?: string;
   radiusKm?: number;
+  /**
+   * With `institutionSlug`: keep only listings whose closest published campus
+   * is this one. Campus landing pages use it so each campus has its own set,
+   * instead of every page in a cluster of colleges repeating its neighbours'.
+   */
+  nearestCampusOnly?: boolean;
   sort?: 'relevance' | 'price_asc' | 'price_desc' | 'distance';
   page?: number;
   pageSize?: number;
@@ -174,6 +180,17 @@ export async function searchListings(filters: SearchFilters = {}): Promise<{
     conditions.push(
       withinKm(properties.location, origin, filters.radiusKm ?? DEFAULT_RADIUS_KM),
     );
+  }
+  if (origin && institution && filters.nearestCampusOnly) {
+    // Geography distance, not `<->` on the geometry column: in degrees, a
+    // degree of longitude shrinks with latitude, which would misassign listings
+    // sitting between two campuses.
+    conditions.push(sql`(
+      SELECT ${institutions.id} FROM ${institutions}
+      WHERE ${institutions.isPublished} = true
+      ORDER BY ST_Distance(${institutions.location}::geography, ${properties.location}::geography) ASC
+      LIMIT 1
+    ) = ${institution.id}`);
   }
 
   const distanceExpr = origin

@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "hashtagstay-dev",
+      "name": "hashtagstay1",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "3100"],
-      "port": 3100,
+      "runtimeArgs": ["run", "dev", "--", "--port", "3101"],
+      "port": 3101,
       "autoPort": false
     }
   ]

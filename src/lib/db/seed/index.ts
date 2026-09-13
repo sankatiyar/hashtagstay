@@ -7,6 +7,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { PHOTOS, type PhotoKey, storedPhotoPath } from '../../photos';
 import * as schema from '../schema';
 import { connectForScript } from '../script-connection';
+import { seedBulkInventory } from './bulk-inventory';
 import { INSTITUTIONS } from './institutions-data';
 
 /** Representative photo galleries for the sample listings, cover first. */
@@ -552,6 +553,7 @@ async function main() {
         console.log('  staff logins: skipped (set SEED_STAFF_PASSWORD to create them)');
       }
       await seedDevInventory(db);
+      await seedBulkInventory(db);
     }
 
     console.log('\nSeed complete.');
