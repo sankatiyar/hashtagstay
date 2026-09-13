@@ -19,7 +19,9 @@ import {
   assertTransition,
   listingMachine,
 } from '@/lib/state-machines';
+import { slugify, uniqueSlug } from '@/lib/slug';
 import { ageInDaysOrNull, isExpired, isoDate } from '@/lib/time';
+import type { CreatePropertyInput } from '@/lib/validation/property';
 
 /**
  * Property read and write operations for the ops console.
@@ -264,6 +266,135 @@ export async function listStaleInventory(olderThanDays = 14) {
 // ---------------------------------------------------------------------------
 // Mutations
 // ---------------------------------------------------------------------------
+
+/**
+ * Create a property together with its room types and initial availability.
+ *
+ * Wrapped in a transaction because a property with no room types is not a
+ * listable thing: a partial insert would leave inventory that cannot be
+ * verified or sold, and someone would have to find and finish it by hand.
+ *
+ * The slug is resolved inside the transaction against currently-taken values.
+ * That still races two concurrent creates of the same name, which is why the
+ * unique index on `properties.slug` is the real guarantee — the retry loop just
+ * makes the common case pleasant.
+ */
+export async function createProperty(
+  input: CreatePropertyInput,
+  actor: AuditActor,
+): Promise<{ id: string; slug: string }> {
+  const desiredBase = input.slug ?? slugify(input.name);
+  if (!desiredBase) {
+    throw new Error(
+      'Could not derive a URL slug from that name. Enter one explicitly — this ' +
+        'happens when the name contains no Latin letters or digits.',
+    );
+  }
+
+  const location =
+    input.latitude !== undefined && input.longitude !== undefined
+      ? { x: Number(input.longitude), y: Number(input.latitude) }
+      : null;
+
+  const created = await db.transaction(async (tx) => {
+    // Only slugs sharing the base can collide, so this stays a narrow scan.
+    const taken = await tx
+      .select({ slug: properties.slug })
+      .from(properties)
+      .where(ilike(properties.slug, `${desiredBase}%`));
+
+    const slug = uniqueSlug(
+      desiredBase,
+      taken.map((row) => row.slug),
+    );
+
+    const [property] = await tx
+      .insert(properties)
+      .values({
+        organizationId: input.organizationId,
+        name: input.name,
+        slug,
+        description: input.description ?? null,
+        propertyType: input.propertyType,
+        genderPolicy: input.genderPolicy,
+        addressLine1: input.addressLine1,
+        addressLine2: input.addressLine2 ?? null,
+        locality: input.locality ?? null,
+        city: input.city,
+        state: input.state ?? null,
+        postalCode: input.postalCode ?? null,
+        country: 'IN',
+        location,
+        amenities: input.amenities,
+        houseRules: input.houseRules,
+        // Always starts as a draft. Nothing reaches residents without passing
+        // verification, and the listing machine has no draft -> live edge.
+        listingState: 'draft',
+        lastReviewedAt: new Date(),
+      })
+      .returning({ id: properties.id, slug: properties.slug });
+
+    for (const room of input.rooms) {
+      const [roomRow] = await tx
+        .insert(roomTypes)
+        .values({
+          propertyId: property.id,
+          name: room.name,
+          occupancy: room.occupancy,
+          hasPrivateBathroom: room.hasPrivateBathroom,
+          rentAmountMinor: room.rentAmountMinor!,
+          rentCurrency: 'INR',
+          depositAmountMinor: room.depositAmountMinor,
+          depositCurrency: room.depositAmountMinor === null ? null : 'INR',
+          minTenureMonths: room.minTenureMonths,
+          amenities: [],
+        })
+        .returning({ id: roomTypes.id });
+
+      // Seed availability at zero rather than leaving no row. "Never confirmed"
+      // is the honest starting state and puts the property straight into the
+      // ops queue to be confirmed with the operator.
+      await tx.insert(availability).values({
+        roomTypeId: roomRow.id,
+        availableCount: 0,
+        source: 'ops',
+        confirmedBy: actor.id,
+        lastConfirmedAt: new Date(),
+        notes: 'Created in the ops console; bed count not yet confirmed.',
+      });
+    }
+
+    return property;
+  });
+
+  await audit({
+    actor,
+    action: 'create',
+    entityType: 'properties',
+    entityId: created.id,
+    after: {
+      name: input.name,
+      slug: created.slug,
+      city: input.city,
+      propertyType: input.propertyType,
+      roomTypeCount: input.rooms.length,
+      listingState: 'draft',
+    },
+  });
+
+  return created;
+}
+
+/** Operators available to attach a property to, for the create form. */
+export async function listOrganizationOptions(): Promise<
+  { id: string; name: string }[]
+> {
+  return db
+    .select({ id: organizations.id, name: organizations.name })
+    .from(organizations)
+    .where(and(isNull(organizations.deletedAt), isNull(organizations.suspendedAt)))
+    .orderBy(asc(organizations.name));
+}
 
 export interface UpdatePropertyInput {
   name?: string;

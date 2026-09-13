@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   confirmAvailability,
+  createProperty,
   countPropertiesByState,
   getPropertyDetail,
   listProperties,
@@ -39,7 +40,17 @@ let roomTypeId: string;
 
 async function cleanup() {
   await client`DELETE FROM audit_log WHERE actor_label = ${ACTOR.label}`;
-  await client`DELETE FROM properties WHERE slug LIKE ${'%' + SUFFIX}`;
+
+  // Delete by organization, not by slug pattern. Collision-suffixed slugs end
+  // in "-2"/"-3" and so do not match `%SUFFIX`, which left orphans behind and
+  // then failed the organization delete on its ON DELETE RESTRICT foreign key.
+  // room_types and availability cascade from properties.
+  await client`
+    DELETE FROM properties
+    WHERE organization_id IN (
+      SELECT id FROM organizations WHERE slug LIKE ${'%' + SUFFIX}
+    )
+  `;
   await client`DELETE FROM organizations WHERE slug LIKE ${'%' + SUFFIX}`;
 }
 
@@ -385,6 +396,155 @@ describe('updateProperty()', () => {
     await expect(
       updateProperty('00000000-0000-0000-0000-000000000000', { name: 'x' }, ACTOR),
     ).rejects.toThrow(/not found/);
+  });
+});
+
+describe('createProperty()', () => {
+  const roomsFor = (rent: number) => [
+    {
+      name: 'Single occupancy',
+      occupancy: 1,
+      hasPrivateBathroom: true,
+      rentAmountMinor: rent,
+      depositAmountMinor: rent * 2,
+      minTenureMonths: 3,
+    },
+  ];
+
+  function input(overrides: Record<string, unknown> = {}) {
+    return {
+      organizationId: orgId,
+      name: `Created Property ${SUFFIX}`,
+      slug: undefined,
+      description: undefined,
+      propertyType: 'coliving' as const,
+      genderPolicy: 'any' as const,
+      addressLine1: '9 Created Road',
+      addressLine2: undefined,
+      locality: 'Indiranagar',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      postalCode: '560038',
+      latitude: '12.9784',
+      longitude: '77.6408',
+      amenities: ['wifi', 'cctv'],
+      houseRules: ['no_smoking'],
+      rooms: roomsFor(1_850_000),
+      ...overrides,
+    } as Parameters<typeof createProperty>[0];
+  }
+
+  it('creates a draft with rooms and seeded availability', async () => {
+    const created = await createProperty(input(), ACTOR);
+
+    const detail = await getPropertyDetail(created.id);
+    expect(detail!.property.listingState).toBe('draft');
+    expect(detail!.property.verificationTier).toBe('none');
+    expect(detail!.rooms).toHaveLength(1);
+    // Seeded at zero with a source, so it lands in the ops queue honestly
+    // rather than looking like nobody has ever looked at it.
+    expect(detail!.rooms[0].availableCount).toBe(0);
+    expect(detail!.rooms[0].availabilitySource).toBe('ops');
+  });
+
+  it('never creates a property already live', async () => {
+    // The listing machine has no draft -> live edge; creation must respect that
+    // rather than offering a shortcut around verification.
+    const created = await createProperty(
+      input({ name: `Never Live ${SUFFIX}` }),
+      ACTOR,
+    );
+    const [row] = await client<{ listing_state: string }[]>`
+      SELECT listing_state FROM properties WHERE id = ${created.id}
+    `;
+    expect(row.listing_state).toBe('draft');
+  });
+
+  it('derives a slug from the name', async () => {
+    const created = await createProperty(
+      input({ name: `Nest Koramangala ${SUFFIX}` }),
+      ACTOR,
+    );
+    expect(created.slug).toMatch(/^nest-koramangala-svc-\d+$/);
+  });
+
+  it('suffixes a colliding slug instead of failing', async () => {
+    const name = `Collide ${SUFFIX}`;
+    const first = await createProperty(input({ name }), ACTOR);
+    const second = await createProperty(input({ name }), ACTOR);
+    const third = await createProperty(input({ name }), ACTOR);
+
+    expect(second.slug).toBe(`${first.slug}-2`);
+    expect(third.slug).toBe(`${first.slug}-3`);
+  });
+
+  it('honours an explicitly supplied slug', async () => {
+    const created = await createProperty(
+      input({ name: `Explicit ${SUFFIX}`, slug: `explicit-slug-${SUFFIX}` }),
+      ACTOR,
+    );
+    expect(created.slug).toBe(`explicit-slug-${SUFFIX}`);
+  });
+
+  it('stores coordinates as a 4326 point with the axes the right way round', async () => {
+    const created = await createProperty(input({ name: `Geo ${SUFFIX}` }), ACTOR);
+    const [row] = await client<{ srid: number; lat: number; lng: number }[]>`
+      SELECT ST_SRID(location) AS srid,
+             ST_Y(location)::float8 AS lat,
+             ST_X(location)::float8 AS lng
+      FROM properties WHERE id = ${created.id}
+    `;
+    expect(row.srid).toBe(4326);
+    expect(row.lat).toBeCloseTo(12.9784, 3);
+    expect(row.lng).toBeCloseTo(77.6408, 3);
+  });
+
+  it('creates without coordinates, excluded from proximity search', async () => {
+    const created = await createProperty(
+      input({ name: `No Geo ${SUFFIX}`, latitude: undefined, longitude: undefined }),
+      ACTOR,
+    );
+    const detail = await getPropertyDetail(created.id);
+    expect(detail!.property.location).toBeNull();
+  });
+
+  it('rolls back entirely when a room type is invalid', async () => {
+    const before = await client<{ count: string }[]>`
+      SELECT count(*)::text AS count FROM properties WHERE organization_id = ${orgId}
+    `;
+
+    await expect(
+      createProperty(
+        input({
+          name: `Rollback ${SUFFIX}`,
+          // occupancy is a smallint; this overflows and must abort the whole
+          // transaction rather than leaving a property with no sellable room.
+          rooms: [{ ...roomsFor(100000)[0], occupancy: 999_999 }],
+        }),
+        ACTOR,
+      ),
+    ).rejects.toThrow();
+
+    const after = await client<{ count: string }[]>`
+      SELECT count(*)::text AS count FROM properties WHERE organization_id = ${orgId}
+    `;
+    expect(after[0].count).toBe(before[0].count);
+  });
+
+  it('rejects a name with no slug-able characters', async () => {
+    await expect(createProperty(input({ name: '!!!' }), ACTOR)).rejects.toThrow(
+      /Enter one explicitly/,
+    );
+  });
+
+  it('audits the creation', async () => {
+    const created = await createProperty(input({ name: `Audited ${SUFFIX}` }), ACTOR);
+    const [entry] = await client<{ action: string; after: Record<string, unknown> }[]>`
+      SELECT action, after FROM audit_log
+      WHERE entity_id = ${created.id} AND action = 'create'
+    `;
+    expect(entry.action).toBe('create');
+    expect(entry.after).toMatchObject({ listingState: 'draft', roomTypeCount: 1 });
   });
 });
 
