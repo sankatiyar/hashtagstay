@@ -55,3 +55,6 @@ next-env.d.ts
 # verification evidence and ad-hoc exports (may contain PII — never commit)
 /tmp/
 /exports/
+
+# locally stored uploads (listing photos, verification documents) in development
+/.uploads/

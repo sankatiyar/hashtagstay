@@ -23,6 +23,11 @@ import {
   nearbyInstitutions,
 } from '@/lib/services/public-search';
 import { isExpired } from '@/lib/time';
+import { toggleWishlistAction } from '@/app/(public)/account/actions';
+import { ViewBeacon } from '@/components/public/view-beacon';
+import { WishlistButton } from '@/components/public/wishlist-button';
+import { listPhotos } from '@/lib/services/media';
+import { publishedReviews } from '@/lib/services/reviews';
 import { TIER_RESIDENT_FACING, type VerificationTier } from '@/lib/verification/rubric';
 import { resolveAmenities, resolveHouseRules } from '@/lib/taxonomy/amenities';
 
@@ -84,7 +89,11 @@ export default async function ListingPage(props: {
   const location = listing.location
     ? { lat: listing.location.y, lng: listing.location.x }
     : null;
-  const campuses = await nearbyInstitutions(location);
+  const [campuses, photos, reviewSummary] = await Promise.all([
+    nearbyInstitutions(location),
+    listPhotos(listing.id, { publicOnly: true }),
+    publishedReviews(listing.id),
+  ]);
 
   const amenities = resolveAmenities(listing.amenities);
   const safety = amenities.filter((a) => a.isSafetySignal);
@@ -119,6 +128,7 @@ export default async function ListingPage(props: {
         )}
       />
 
+      <ViewBeacon propertyId={listing.id} />
       <nav aria-label="Breadcrumb" className="text-sm text-slate-500">
         <Link href="/search" className="hover:underline">
           Stays
@@ -164,9 +174,34 @@ export default async function ListingPage(props: {
             >
               Check availability
             </Link>
+            <div className="mt-2 flex justify-end">
+              {/* Rendered signed-in so the page stays statically generated; the
+                  action tells a signed-out visitor to sign in. */}
+              <WishlistButton
+                propertyId={listing.id}
+                saved={false}
+                signedIn
+                action={toggleWishlistAction}
+                returnTo={`/stays/${listing.slug}`}
+              />
+            </div>
           </div>
         )}
       </div>
+
+      {photos.length > 0 && (
+        <section className="mt-6 grid gap-2 sm:grid-cols-3">
+          {photos.slice(0, 6).map((photo, index) => (
+            // eslint-disable-next-line @next/next/no-img-element -- storage URLs vary by provider
+            <img
+              key={photo.id}
+              src={photo.url}
+              alt={photo.altText ?? `${listing.name} photo ${index + 1}`}
+              className={`w-full rounded-lg object-cover ${index === 0 ? 'h-64 sm:col-span-3' : 'h-40'}`}
+            />
+          ))}
+        </section>
+      )}
 
       {/* The verification claim, stated in full rather than as a bare badge. */}
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
@@ -303,6 +338,42 @@ export default async function ListingPage(props: {
           </ul>
         </section>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-slate-900">Reviews from residents</h2>
+        {reviewSummary.count === 0 ? (
+          <p className="mt-2 text-sm text-slate-600">
+            No reviews yet. Only residents who booked through us and moved in can
+            review, so there are no anonymous ones.
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-slate-600">
+              {reviewSummary.average?.toFixed(1)} / 5 from {reviewSummary.count}{' '}
+              verified {reviewSummary.count === 1 ? 'stay' : 'stays'}
+              {reviewSummary.safetyAverage !== null &&
+                ` · safety ${reviewSummary.safetyAverage.toFixed(1)} / 5`}
+            </p>
+            <ul className="mt-3 space-y-3">
+              {reviewSummary.reviews.slice(0, 10).map((review) => (
+                <li
+                  key={review.id}
+                  className="rounded-xl border border-slate-200 bg-white p-4 text-sm"
+                >
+                  <p className="font-medium text-slate-900">
+                    {review.rating}/5{review.title ? ` — ${review.title}` : ''}
+                  </p>
+                  <p className="mt-1 text-slate-700">{review.body}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {review.residentName} · verified stay ·{' '}
+                    {review.createdAt.toISOString().slice(0, 7)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
 
       <section className="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-6">
         <h2 className="text-lg font-semibold text-slate-900">

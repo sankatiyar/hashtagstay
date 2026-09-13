@@ -9,3 +9,4 @@ export * from './supply';
 export * from './demand';
 export * from './transaction';
 export * from './platform';
+export * from './operations';

@@ -87,6 +87,8 @@ export const leads = pgTable(
     }),
     /** Anything the resident typed free-form. */
     requirementNotes: text(),
+    /** ISO 639-1 code of the language the resident wants to be called in (FR-10). */
+    preferredLanguage: text().notNull().default('en'),
 
     // --- Attribution (write-once, at insert) -------------------------------
     channel: leadChannelEnum().notNull().default('direct'),

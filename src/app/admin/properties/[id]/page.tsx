@@ -223,6 +223,12 @@ export default async function PropertyDetailPage(props: {
             >
               Open verification review
             </Link>
+            <Link
+              href={`/admin/properties/${property.id}/media`}
+              className="mt-3 ml-2 inline-block rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              Photos and documents
+            </Link>
           </section>
 
           <section className="rounded-xl border border-slate-200 bg-white p-5">

@@ -204,6 +204,12 @@ export const payments = pgTable(
     providerOrderId: text(),
     providerPaymentId: text().unique(),
     providerPaymentLinkId: text(),
+    /**
+     * Unguessable token for our own /pay/[token] page, which the resident
+     * reaches from the link an RM sends. Kept separate from the provider link so
+     * the page can show the fee breakdown and GST before handing off.
+     */
+    publicToken: text().unique(),
     /** The link an RM sent from the CRM (FR-14). */
     paymentLinkUrl: text(),
     method: text(),

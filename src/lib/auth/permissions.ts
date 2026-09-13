@@ -78,6 +78,10 @@ export const PERMISSIONS = [
   'ticket:view',
   'ticket:respond',
   'ticket:handle_safety_incident',
+  /** Publish or reject resident reviews (FR-27). */
+  'review:moderate',
+  /** Enter marketing spend so cost-per-lead can be computed. */
+  'marketing_spend:edit',
 
   // --- Platform -----------------------------------------------------------
   'user:manage',
@@ -134,6 +138,8 @@ const OPS: readonly Permission[] = [
   'lead:view_all',
   'ticket:view',
   'ticket:respond',
+  'ticket:handle_safety_incident',
+  'review:moderate',
   'report:view',
 ];
 
@@ -165,6 +171,7 @@ const FINANCE: readonly Permission[] = [
   'invoice:issue',
   'statement:generate',
   'fee_rule:view',
+  'marketing_spend:edit',
   'report:view',
   'audit:view',
 ];

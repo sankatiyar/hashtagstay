@@ -27,11 +27,17 @@ const CATEGORIES = Object.keys(CATEGORY_LABELS) as AmenityCategory[];
 export function PropertyForm({
   organizations,
   cities,
+  action = createPropertyAction,
 }: {
   organizations: { id: string; name: string }[];
   cities: string[];
+  /** Defaults to the ops console action; the host portal passes its own. */
+  action?: (
+    state: CreatePropertyState,
+    formData: FormData,
+  ) => Promise<CreatePropertyState>;
 }) {
-  const [state, formAction, pending] = useActionState(createPropertyAction, initial);
+  const [state, formAction, pending] = useActionState(action, initial);
 
   // Room rows are client state so ops can add a second room type without a
   // round trip. One row is the minimum the schema accepts.
