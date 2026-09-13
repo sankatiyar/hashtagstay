@@ -398,7 +398,9 @@ export default async function ListingPage(props: {
 
           {/* Booking panel */}
           <aside className="hidden lg:block">
-            <div className="border-line sticky top-28 rounded-2xl border p-6 shadow-(--shadow-lift)">
+            {/* Opaque, and holding every control in the panel: a transparent
+                sticky card let the content scrolling beneath it show through. */}
+            <div className="border-line sticky top-28 z-10 rounded-2xl border bg-white p-6 shadow-(--shadow-lift)">
               {cheapest && (
                 <p className="text-ink">
                   {listing.rooms.length > 1 && (
@@ -442,6 +444,18 @@ export default async function ListingPage(props: {
                 You won’t be charged yet
               </p>
 
+              <div className="mt-4">
+                {/* Rendered signed-in so the page stays statically generated; the
+                    action tells a signed-out visitor to sign in. */}
+                <WishlistButton
+                  propertyId={listing.id}
+                  saved={false}
+                  signedIn
+                  action={toggleWishlistAction}
+                  returnTo={`/stays/${listing.slug}`}
+                />
+              </div>
+
               <dl className="border-line text-ink mt-5 space-y-3 border-t pt-5">
                 <div className="flex justify-between">
                   <dt className="underline">Rent, paid to operator</dt>
@@ -462,18 +476,6 @@ export default async function ListingPage(props: {
                   <dd className="text-ink-soft">shown before you pay</dd>
                 </div>
               </dl>
-            </div>
-
-            <div className="mt-4">
-              {/* Rendered signed-in so the page stays statically generated; the
-                  action tells a signed-out visitor to sign in. */}
-              <WishlistButton
-                propertyId={listing.id}
-                saved={false}
-                signedIn
-                action={toggleWishlistAction}
-                returnTo={`/stays/${listing.slug}`}
-              />
             </div>
           </aside>
         </div>
