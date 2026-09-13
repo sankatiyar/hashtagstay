@@ -2,10 +2,12 @@ import { existsSync } from 'node:fs';
 
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import postgres from 'postgres';
+
+import { connectForScript } from './script-connection';
 
 /**
- * Migration runner. Run with `npm run db:migrate`.
+ * Migration runner. Run with `npm run db:migrate`; also runs on every Vercel
+ * deploy through `vercel-build`.
  *
  * Deliberately a script rather than `drizzle-kit push`: push diffs the live
  * database against the schema and applies whatever it infers, which is fine for
@@ -20,15 +22,6 @@ for (const file of ['.env.local', '.env']) {
   }
 }
 
-const url = process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL;
-
-if (!url) {
-  throw new Error(
-    'DATABASE_URL_DIRECT (or DATABASE_URL) is not set. Copy .env.example to ' +
-      '.env.local and fill in your Supabase connection strings.',
-  );
-}
-
 /**
  * Extensions the schema depends on. These run before migrations because a
  * `geography(Point,4326)` column cannot be created until PostGIS exists, and
@@ -41,8 +34,8 @@ if (!url) {
 const REQUIRED_EXTENSIONS = ['postgis', 'pg_trgm', 'pgcrypto'] as const;
 
 async function main() {
-  // `max: 1` — migrations must run on a single connection, in order.
-  const sql = postgres(url!, { max: 1, prepare: false, onnotice: () => {} });
+  // One connection: migrations must run in order.
+  const sql = await connectForScript();
 
   try {
     for (const extension of REQUIRED_EXTENSIONS) {

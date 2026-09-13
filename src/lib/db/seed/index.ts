@@ -3,9 +3,8 @@ import { existsSync } from 'node:fs';
 import bcrypt from 'bcryptjs';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-
 import * as schema from '../schema';
+import { connectForScript } from '../script-connection';
 import { INSTITUTIONS } from './institutions-data';
 
 /**
@@ -27,12 +26,12 @@ for (const file of ['.env.local', '.env']) {
   }
 }
 
-const url = process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL;
-if (!url) {
-  throw new Error('DATABASE_URL is not set. See .env.example.');
-}
-
-const isProduction = process.env.NODE_ENV === 'production';
+/**
+ * A Vercel build is treated as production whatever NODE_ENV says, so the dev
+ * password below can never be seeded into a deployed database.
+ */
+const isProduction =
+  process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
 
 /**
  * A public demo deployment (DEMO_MODE=true) gets sample inventory so there is
@@ -40,7 +39,9 @@ const isProduction = process.env.NODE_ENV === 'production';
  * public repository, and on a public URL it would open the ops console to
  * anyone. Demo staff logins are only created when SEED_STAFF_PASSWORD is set.
  */
-const isDemo = process.env.DEMO_MODE === 'true';
+const isDemo =
+  process.env.DEMO_MODE === 'true' ||
+  (!process.env.DEMO_MODE && Boolean(process.env.VERCEL));
 
 /** Dev-only password for seeded staff logins. Used only outside production. */
 const DEV_PASSWORD = 'devpassword123';
@@ -223,6 +224,21 @@ async function seedDevStaff(
  * demonstrable. Skipped in production.
  */
 async function seedDevInventory(db: ReturnType<typeof drizzle>) {
+  // On Vercel the seed runs on every deploy. Room types are replaced wholesale
+  // below, which would fail once a booking references one, so a deploy only adds
+  // sample inventory to a database that does not have it yet.
+  if (process.env.VERCEL) {
+    const existing = await db
+      .select({ id: schema.organizations.id })
+      .from(schema.organizations)
+      .where(eq(schema.organizations.slug, 'nest-coliving-sample'))
+      .limit(1);
+    if (existing.length > 0) {
+      console.log('  sample inventory: already present, left untouched');
+      return;
+    }
+  }
+
   const [org] = await db
     .insert(schema.organizations)
     .values({
@@ -466,7 +482,7 @@ async function seedDevInventory(db: ReturnType<typeof drizzle>) {
 }
 
 async function main() {
-  const client = postgres(url!, { max: 1, prepare: false, onnotice: () => {} });
+  const client = await connectForScript();
   const db = drizzle(client, { schema, casing: 'snake_case' });
 
   try {

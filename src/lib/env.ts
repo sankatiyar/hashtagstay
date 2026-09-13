@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { directDatabaseUrl, runtimeDatabaseUrl } from './db/url';
+
 /**
  * Validated environment. Import `env` anywhere on the server; a missing or
  * malformed core variable fails fast at startup with a readable message rather
@@ -226,15 +228,45 @@ export function clientEnv(): ClientEnv {
   cachedClientEnv ??= parseOrThrow(
     clientSchema,
     {
-      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      // Vercel exposes its production domain to the build; use it when no site
+      // URL is set, so canonical links and sitemaps are right on first deploy.
+      NEXT_PUBLIC_SITE_URL:
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+          : undefined),
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      // The Vercel–Supabase integration still names the publishable key "anon".
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       NEXT_PUBLIC_GA4_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
     },
     'client',
   );
   return cachedClientEnv;
+}
+
+/**
+ * Map the variables the Vercel–Supabase integration injects onto ours, so a
+ * deployment works once the integration is connected — no database password
+ * copied by hand. Explicitly set project variables always win.
+ *
+ * A Vercel deployment defaults to DEMO_MODE, because until vendors are procured
+ * a deployment without it cannot send an OTP, so nothing works. The real launch
+ * sets DEMO_MODE=false, which production then enforces.
+ */
+function withPlatformFallbacks(
+  source: NodeJS.ProcessEnv,
+): Record<string, string | undefined> {
+  return {
+    ...source,
+    DATABASE_URL: runtimeDatabaseUrl(source),
+    DATABASE_URL_DIRECT: directDatabaseUrl(source),
+    SUPABASE_SECRET_KEY: source.SUPABASE_SECRET_KEY || source.SUPABASE_SERVICE_ROLE_KEY,
+    AUTH_SECRET: source.AUTH_SECRET || source.SUPABASE_JWT_SECRET,
+    DEMO_MODE: source.DEMO_MODE || (source.VERCEL ? 'true' : undefined),
+  };
 }
 
 let cachedServerEnv: ServerEnv | null = null;
@@ -251,7 +283,11 @@ export function serverEnv(): ServerEnv {
         'the client — use clientEnv for NEXT_PUBLIC_* values instead.',
     );
   }
-  cachedServerEnv ??= parseOrThrow(serverSchema, process.env, 'server');
+  cachedServerEnv ??= parseOrThrow(
+    serverSchema,
+    withPlatformFallbacks(process.env),
+    'server',
+  );
   return cachedServerEnv;
 }
 
