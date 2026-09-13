@@ -36,15 +36,22 @@ import {
 /**
  * Public listing detail — the primary SEO landing page.
  *
- * Statically generated for known listings and revalidated, because this is the
+ * Statically generated for real listings and revalidated, because this is the
  * page that has to rank and has to be fast. Rent and availability change, so
  * the window is short rather than indefinite.
+ *
+ * Generated sample listings (over a thousand, slugs ending `-sample`) are left
+ * to render on their first request and are then cached the same way.
+ * Prerendering them all pushed a build towards the better part of an hour, for
+ * pages that exist only to demonstrate the product.
  */
 export const revalidate = 600;
 
 export async function generateStaticParams() {
   const slugs = await listLiveListingSlugs();
-  return slugs.map(({ slug }) => ({ slug }));
+  return slugs
+    .filter(({ slug }) => !slug.endsWith('-sample'))
+    .map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata(props: {

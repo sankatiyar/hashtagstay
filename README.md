@@ -93,6 +93,11 @@ interchangeable:
 prerender, so **`DATABASE_URL` must resolve in any environment that builds this
 app**, including CI and your deployment platform's build step.
 
+Listing pages prerender only real inventory. Generated sample listings (slugs
+ending in `-sample`, over a thousand of them) render on their first request and
+are then cached like any other page, which keeps a build to minutes instead of
+the better part of an hour.
+
 This is deliberate. The alternative — swallowing a connection error and
 returning no params — would turn a loud failure into a silent one that ships
 zero prerendered city, campus and listing pages. On a funnel that depends

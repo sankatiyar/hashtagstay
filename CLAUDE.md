@@ -30,7 +30,7 @@ npm run db:generate              # generate a migration after editing src/lib/db
 - `typecheck` runs `next typegen` first, because `PageProps`/`LayoutProps` types live in the gitignored `.next/types`.
 - Integration tests load `.env.local` themselves and run serially (they share one DB). They create and delete rows with a unique suffix, so running them against the seeded dev DB is safe.
 - Use `db:migrate`, never `db:push`. Push would revert the hand-written SRID migration `drizzle/0001`. CI fails if `db:generate` produces a diff, so schema edits must ship with their generated migration.
-- **`next build` needs a reachable, seeded database.** `generateStaticParams` on `/stays/[slug]`, `/city/[slug]` and `/near/[slug]` queries live inventory. CI asserts that those pages were prerendered. Don't make `generateStaticParams` swallow DB errors.
+- **`next build` needs a reachable, seeded database.** `generateStaticParams` on `/stays/[slug]`, `/city/[slug]` and `/near/[slug]` queries live inventory. CI asserts the city and campus pages were prerendered. Listing pages prerender only non-sample inventory; the ~1,300 `-sample` listings render on first request and are then cached. Don't make `generateStaticParams` swallow DB errors.
 - Seeded staff logins locally: `ops@`, `verifier@`, `rm@`, `rmlead@`, `finance@`, `admin@hashtagstay.local`. The password is `devpassword123`, or `SEED_STAFF_PASSWORD` when that variable is set. On Vercel, staff logins are created only if `SEED_STAFF_PASSWORD` is set.
 
 ## Architecture

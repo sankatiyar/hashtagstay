@@ -103,10 +103,11 @@ jobs:
           # Note the paths: the `(public)` route group does not appear in the
           # build output, so these are /city/... not /(public)/city/...
           missing=0
+          # Listing pages are not asserted: the CI database holds only sample
+          # listings, and those render on demand rather than at build time.
           for path in \
             ".next/server/app/city/bengaluru.html" \
-            ".next/server/app/near/iisc-bengaluru.html" \
-            ".next/server/app/stays/nest-malleswaram-sample.html"
+            ".next/server/app/near/iisc-bengaluru.html"
           do
             if [ ! -f "$path" ]; then
               echo "::error::expected prerendered page missing: $path"
