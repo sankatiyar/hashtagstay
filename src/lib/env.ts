@@ -235,11 +235,17 @@ export function clientEnv(): ClientEnv {
         (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
           ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
           : undefined),
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      // The Vercel–Supabase integration still names the publishable key "anon".
+      // The Vercel–Supabase integration sets SUPABASE_URL but not the public
+      // copy. clientEnv() is only read on the server (storage, SEO, actions),
+      // so the server-side fallback is enough.
+      NEXT_PUBLIC_SUPABASE_URL:
+        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+      // The integration still names the publishable key "anon".
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        process.env.SUPABASE_PUBLISHABLE_KEY ||
+        process.env.SUPABASE_ANON_KEY,
       NEXT_PUBLIC_GA4_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID,
     },
     'client',
