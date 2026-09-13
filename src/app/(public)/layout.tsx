@@ -58,7 +58,10 @@ export default async function PublicLayout({ children }: { children: ReactNode }
             >
               Your account
             </Link>
-            <Link href="/enquiry" className="btn-primary px-4 py-2">
+            <Link
+              href="/enquiry"
+              className="btn-primary px-3 py-2 text-[13px] sm:px-4 sm:text-sm"
+            >
               Find me a stay
             </Link>
 

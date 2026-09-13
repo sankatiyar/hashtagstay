@@ -25,7 +25,7 @@ export function Logo({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
     <Link href="/" className="group inline-flex items-center gap-2.5" aria-label="HashtagStay home">
       <LogoMark className="h-8 w-8 transition-transform duration-300 group-hover:-rotate-6" />
       <span
-        className={`font-display text-[1.35rem] leading-none font-semibold tracking-tight ${tone === 'dark' ? 'text-pine-900' : 'text-white'}`}
+        className={`font-display text-[1.15rem] leading-none font-semibold tracking-tight sm:text-[1.35rem] ${tone === 'dark' ? 'text-pine-900' : 'text-white'}`}
       >
         <span className="text-marigold-500">#</span>HashtagStay
       </span>

@@ -27,7 +27,7 @@ export function HeroSearch({
     >
       {/* One row only at xl: in the hero's half-width column, five fields in a
           row squeeze the labels onto two lines. */}
-      <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-[1fr_1.3fr_1fr_1fr_auto] xl:items-stretch xl:divide-x xl:divide-line">
+      <div className="grid gap-1 sm:grid-cols-2 2xl:grid-cols-[1fr_1.3fr_1fr_1fr_auto] 2xl:items-stretch 2xl:divide-x 2xl:divide-line">
         <label className={fieldShell}>
           <span className={fieldLabel}>City</span>
           <select name="city" className={control} defaultValue="">
@@ -74,8 +74,8 @@ export function HeroSearch({
           </select>
         </label>
 
-        <div className="flex items-center p-1 sm:col-span-2 xl:col-span-1 xl:border-l-0 xl:pl-2">
-          <button type="submit" className="btn-primary w-full gap-2.5 py-3.5 xl:w-auto xl:px-7">
+        <div className="flex items-center p-1 sm:col-span-2 2xl:col-span-1 2xl:border-l-0 2xl:pl-2">
+          <button type="submit" className="btn-primary w-full gap-2.5 py-3.5 2xl:w-auto 2xl:px-7">
             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
               <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2.4" />
               <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
