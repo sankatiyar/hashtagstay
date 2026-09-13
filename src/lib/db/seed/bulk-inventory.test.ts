@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { PHOTO_LIBRARY } from '../../photo-library';
 import { isKnownAmenity, isKnownHouseRule } from '../../taxonomy/amenities';
 import {
   BULK_PER_CAMPUS,
+  GALLERY_SIZE,
   MAX_CAMPUS_DISTANCE_KM,
   MIN_CAMPUS_DISTANCE_KM,
   buildBulkInventory,
@@ -87,6 +89,46 @@ describe('buildBulkInventory()', () => {
     for (const listing of listings) {
       expect(listing.amenities.filter((slug) => !isKnownAmenity(slug))).toEqual([]);
       expect(listing.houseRules.filter((slug) => !isKnownHouseRule(slug))).toEqual([]);
+    }
+  });
+
+  it('keeps already-published listings where they are, so live links never change', () => {
+    const slugs = new Set(listings.map((l) => l.slug));
+    // Both are live URLs on the public site; a generator change that moved
+    // listings would silently break every shared or indexed link.
+    expect(slugs).toContain('campus-crest-lajpat-nagar-student-village-sample');
+    expect(slugs).toContain('terracotta-warje-suites-sample');
+  });
+
+  it('gives every listing five distinct photos from the library', () => {
+    const libraryIds = new Set(
+      Object.values(PHOTO_LIBRARY)
+        .flat()
+        .map((photo) => photo.id),
+    );
+    for (const listing of listings) {
+      const ids = listing.photos.map((photo) => photo.id);
+      expect(ids).toHaveLength(GALLERY_SIZE);
+      expect(new Set(ids).size).toBe(GALLERY_SIZE);
+      for (const id of ids) expect(libraryIds).toContain(id);
+    }
+  });
+
+  it('never gives two listings the same gallery, and rotates covers widely', () => {
+    const galleries = listings.map((l) => l.photos.map((photo) => photo.id).join(','));
+    expect(new Set(galleries).size).toBe(listings.length);
+    const covers = new Set(listings.map((l) => l.photos[0].id));
+    expect(covers.size).toBeGreaterThanOrEqual(120);
+  });
+});
+
+describe('PHOTO_LIBRARY', () => {
+  it('lists each Unsplash photo once, with a well-formed id and a description', () => {
+    const all = Object.values(PHOTO_LIBRARY).flat();
+    expect(new Set(all.map((photo) => photo.id)).size).toBe(all.length);
+    for (const photo of all) {
+      expect(photo.id).toMatch(/^photo-\d+-[0-9a-f]+$/);
+      expect(photo.alt.length).toBeGreaterThan(3);
     }
   });
 });

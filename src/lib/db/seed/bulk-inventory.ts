@@ -1,7 +1,12 @@
 import { and, inArray, like, notInArray, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { PHOTOS, type PhotoKey, storedPhotoPath } from '../../photos';
+import {
+  type LibraryPhoto,
+  PHOTO_LIBRARY,
+  type PhotoCategory,
+  libraryPhotoPath,
+} from '../../photo-library';
 import * as schema from '../schema';
 import { ANCHOR_CITIES, INSTITUTIONS } from './institutions-data';
 
@@ -425,25 +430,76 @@ const SINGLE_RENT_RANGE: Record<PropertyType, readonly [number, number]> = {
 /** Per-bed rent relative to a single room. */
 const SHARING_DISCOUNT: Record<number, number> = { 1: 1, 2: 0.65, 3: 0.5 };
 
-const BEDROOMS: readonly PhotoKey[] = [
-  'sunlitBedroom',
-  'blueBedroom',
-  'studentRoom',
-  'greyBedroom',
-  'cosyBedroom',
-  'gardenBedroom',
-];
-const COMMON_ROOMS: readonly PhotoKey[] = [
-  'livingRoom',
-  'loungeKitchen',
-  'sharedLounge',
-  'kitchenDining',
-];
-const TYPE_PHOTOS: Record<PropertyType, readonly PhotoKey[]> = {
-  coliving: ['kitchenCooking', 'rooftopFriends', 'balconies'],
-  pbsa: ['studyDesk', 'studentsLaptop', 'yellowBalconies'],
-  homeshare: ['kitchenDining', 'studyDesk', 'balconies'],
-};
+/** Photos in a sample listing's gallery. */
+export const GALLERY_SIZE = 5;
+
+interface GalleryState {
+  /** Galleries already issued, so no two listings share the same five photos. */
+  readonly issued: Set<string>;
+  /** Next cover per category, so covers rotate evenly instead of clustering. */
+  readonly coverCursor: Map<PhotoCategory, number>;
+}
+
+/**
+ * A listing's gallery: five distinct photos in the order a resident reads a
+ * listing — where they would sleep, a second sleeping or shared space, the
+ * living area, something that sets the property type apart (a study space for
+ * a student residence, a common area or kitchen for co-living, the kitchen or
+ * dining table in a home-share), and a closing shot of a bathroom, the
+ * building or the kitchen.
+ */
+function buildGallery(
+  rng: Rng,
+  type: PropertyType,
+  hasSharedRooms: boolean,
+  state: GalleryState,
+): LibraryPhoto[] {
+  const sleep: PhotoCategory = hasSharedRooms && rng() < 0.45 ? 'shared' : 'bedroom';
+  const secondSleep: PhotoCategory =
+    sleep === 'shared' ? 'bedroom' : hasSharedRooms ? 'shared' : 'bedroom';
+  const coverCategory: PhotoCategory =
+    type === 'coliving' && rng() < 0.25 ? 'living' : sleep;
+  const signature: PhotoCategory =
+    type === 'pbsa'
+      ? 'study'
+      : type === 'coliving'
+        ? pick(rng, ['common', 'kitchen', 'dining'] as const)
+        : pick(rng, ['kitchen', 'dining'] as const);
+  const closing: PhotoCategory = pick(
+    rng,
+    (['bathroom', 'exterior', 'kitchen'] as const).filter(
+      (category) => category !== signature,
+    ),
+  );
+  const recipe: PhotoCategory[] = [
+    coverCategory,
+    coverCategory === 'living' ? sleep : secondSleep,
+    coverCategory === 'living' ? secondSleep : 'living',
+    signature,
+    closing,
+  ];
+
+  const coverPool = PHOTO_LIBRARY[coverCategory];
+  const coverIndex = state.coverCursor.get(coverCategory) ?? 0;
+  state.coverCursor.set(coverCategory, coverIndex + 1);
+  const cover = coverPool[coverIndex % coverPool.length];
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const gallery = [cover];
+    for (const category of recipe.slice(1)) {
+      const pool = PHOTO_LIBRARY[category].filter(
+        (photo) => !gallery.some((chosen) => chosen.id === photo.id),
+      );
+      gallery.push(pick(rng, pool));
+    }
+    const key = gallery.map((photo) => photo.id).join(',');
+    if (!state.issued.has(key)) {
+      state.issued.add(key);
+      return gallery;
+    }
+  }
+  throw new Error('Could not build a distinct sample gallery.');
+}
 
 const TYPE_PHRASE: Record<PropertyType, string> = {
   coliving: 'A managed co-living home',
@@ -693,14 +749,14 @@ export interface BulkListing {
   publishedAt: Date;
   lastReviewedAt: Date;
   rooms: BulkRoom[];
-  photos: PhotoKey[];
+  photos: LibraryPhoto[];
 }
 
 /** Build the full sample set in memory. Pure: the same `now` gives the same rows. */
 export function buildBulkInventory(now: Date): BulkListing[] {
   const listings: BulkListing[] = [];
   const usedNames = new Set<string>();
-  let photoIndex = 0;
+  const galleries: GalleryState = { issued: new Set(), coverCursor: new Map() };
 
   for (const campus of INSTITUTIONS) {
     const plan = CITY_PLANS.find((candidate) => candidate.city === campus.city);
@@ -708,6 +764,8 @@ export function buildBulkInventory(now: Date): BulkListing[] {
       throw new Error(`No city plan for ${campus.city} (campus ${campus.slug}).`);
     }
     const rng = createRng(hashSeed(campus.slug));
+    // A separate stream, so gallery choices can change without moving listings.
+    const galleryRng = createRng(hashSeed(`${campus.slug}:gallery`));
 
     for (let index = 0; index < BULK_PER_CAMPUS; index += 1) {
       const { lat, lng, campusKm } = pointInCatchment(rng, campus);
@@ -843,19 +901,16 @@ export function buildBulkInventory(now: Date): BulkListing[] {
         `Rooms come furnished, with ${listPhrase(['Wi-Fi', ...highlights])}. ` +
         'Sample listing generated for demonstration.';
 
-      const offset = photoIndex % BEDROOMS.length;
-      const photos = [
-        ...new Set<PhotoKey>([
-          photoIndex % 2 === 0
-            ? BEDROOMS[offset]
-            : COMMON_ROOMS[photoIndex % COMMON_ROOMS.length],
-          BEDROOMS[(offset + 2) % BEDROOMS.length],
-          COMMON_ROOMS[(photoIndex + 1) % COMMON_ROOMS.length],
-          pick(rng, TYPE_PHOTOS[propertyType]),
-          BEDROOMS[(offset + 4) % BEDROOMS.length],
-        ]),
-      ];
-      photoIndex += 1;
+      // This draw once chose a photo. It is kept so the rest of the sequence —
+      // and with it every listing's address, position and slug — stays exactly
+      // as already seeded; galleries use their own generator below.
+      rng();
+      const photos = buildGallery(
+        galleryRng,
+        propertyType,
+        rooms.some((room) => room.occupancy > 1),
+        galleries,
+      );
 
       listings.push({
         operatorSlug: operator.slug,
@@ -903,6 +958,65 @@ function inBatches<T>(items: readonly T[], size: number): T[][] {
   return batches;
 }
 
+/** Media rows for a listing's seeded gallery. */
+function galleryRows(listing: BulkListing, propertyId: string, now: Date) {
+  return listing.photos.map((photo, sortOrder) => ({
+    propertyId,
+    kind: 'image' as const,
+    storagePath: libraryPhotoPath(photo.id),
+    altText: photo.alt,
+    sortOrder,
+    moderationState: 'approved' as const,
+    moderatedAt: now,
+    moderationNote: 'Sample photo seeded for demonstration.',
+  }));
+}
+
+/**
+ * Replace the seeded photos of sample listings that already exist, touching
+ * nothing else. Only hosted stock (Unsplash URLs) is removed, so a photo an
+ * operator uploaded through the portal is never deleted.
+ */
+async function refreshGalleries(
+  db: PostgresJsDatabase<typeof schema>,
+  listings: readonly BulkListing[],
+  now: Date,
+): Promise<number> {
+  let refreshed = 0;
+  for (const batch of inBatches(listings, WRITE_BATCH)) {
+    const rows = await db
+      .select({ id: schema.properties.id, slug: schema.properties.slug })
+      .from(schema.properties)
+      .where(
+        inArray(
+          schema.properties.slug,
+          batch.map((listing) => listing.slug),
+        ),
+      );
+    if (rows.length === 0) continue;
+
+    const idBySlug = new Map(rows.map((row) => [row.slug, row.id]));
+    await db.delete(schema.media).where(
+      and(
+        inArray(
+          schema.media.propertyId,
+          rows.map((row) => row.id),
+        ),
+        like(schema.media.storagePath, 'https://images.unsplash.com/%'),
+      ),
+    );
+    await db
+      .insert(schema.media)
+      .values(
+        batch
+          .filter((listing) => idBySlug.has(listing.slug))
+          .flatMap((listing) => galleryRows(listing, idBySlug.get(listing.slug)!, now)),
+      );
+    refreshed += rows.length;
+  }
+  return refreshed;
+}
+
 /** On conflict, take the incoming row's value for this column. */
 const excluded = (column: string) => sql.raw(`excluded.${column}`);
 
@@ -928,7 +1042,12 @@ export async function seedBulkInventory(
       .from(schema.properties)
       .where(like(schema.properties.slug, '%-sample'));
     if (count >= listings.length) {
-      console.log('  bulk sample inventory: already present, left untouched');
+      // Rooms may be referenced by real bookings, so the inventory is left
+      // alone. Galleries are only seeded photos and can be refreshed safely.
+      const refreshed = await refreshGalleries(db, listings, now);
+      console.log(
+        `  bulk sample inventory: already present, left untouched; refreshed ${refreshed} sample galleries`,
+      );
       return;
     }
   }
@@ -1040,20 +1159,13 @@ export async function seedBulkInventory(
         ),
       );
 
-    await db.insert(schema.media).values(
-      batch.flatMap((listing) =>
-        listing.photos.map((key, sortOrder) => ({
-          propertyId: propertyIdBySlug.get(listing.slug)!,
-          kind: 'image' as const,
-          storagePath: storedPhotoPath(key),
-          altText: PHOTOS[key].alt,
-          sortOrder,
-          moderationState: 'approved' as const,
-          moderatedAt: now,
-          moderationNote: 'Sample photo seeded for demonstration.',
-        })),
-      ),
-    );
+    await db
+      .insert(schema.media)
+      .values(
+        batch.flatMap((listing) =>
+          galleryRows(listing, propertyIdBySlug.get(listing.slug)!, now),
+        ),
+      );
 
     const roomRows = await db
       .insert(schema.roomTypes)

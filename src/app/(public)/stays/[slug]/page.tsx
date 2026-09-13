@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { toggleWishlistAction } from '@/app/(public)/account/actions';
 import { Icon, type IconName } from '@/components/public/icons';
 import { ListingCover } from '@/components/public/listing-cover';
+import { ListingMap } from '@/components/public/listing-map';
 import { ViewBeacon } from '@/components/public/view-beacon';
 import { WishlistButton } from '@/components/public/wishlist-button';
 import { genderPolicyLabel, propertyTypeLabel } from '@/components/ui/badge';
@@ -306,6 +307,22 @@ export default async function ListingPage(props: {
                     </li>
                   ))}
                 </ul>
+              </Section>
+            )}
+
+            {location && (
+              <Section title="Where you’ll be">
+                <ListingMap
+                  lat={location.lat}
+                  lng={location.lng}
+                  seed={listing.slug}
+                  label={place}
+                />
+                <p className="text-ink mt-5 font-semibold">{place}</p>
+                <p className="text-ink-soft mt-1">
+                  The shaded circle marks the neighbourhood, not the exact building.
+                  Distances to campuses are measured from the property itself.
+                </p>
               </Section>
             )}
 
