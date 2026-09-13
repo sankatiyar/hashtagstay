@@ -151,16 +151,15 @@ function start() {
   }
   initCluster();
   console.log(`Starting Postgres on 127.0.0.1:${PORT} ...`);
-  const code = run(exe('pg_ctl'), [
-    '-D',
-    PGDATA,
-    '-o',
-    serverArgs,
-    '-l',
-    join(PGDATA, 'server.log'),
-    '-w',
-    'start',
-  ]);
+  // stdio must be 'ignore', not inherited: the postmaster pg_ctl launches
+  // inherits these handles and outlives pg_ctl, so an inherited stdout keeps
+  // the caller's pipe open and `npm run db:local:start | ...` never returns.
+  // Server output goes to server.log via -l regardless.
+  const code = run(
+    exe('pg_ctl'),
+    ['-D', PGDATA, '-o', serverArgs, '-l', join(PGDATA, 'server.log'), '-w', 'start'],
+    { stdio: 'ignore' },
+  );
   if (code !== 0) {
     console.error(`Failed to start. See ${join(PGDATA, 'server.log')}`);
     process.exit(code);

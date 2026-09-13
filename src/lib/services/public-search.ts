@@ -391,6 +391,65 @@ export async function listPublishedInstitutions() {
     .orderBy(asc(institutions.city), asc(institutions.name));
 }
 
+/**
+ * Headline figures for the home page.
+ *
+ * Every number here is counted from live inventory. Nothing on the home page is
+ * a claim we cannot substantiate from the database — no resident counts, no
+ * testimonials, no ratings. We have none of those yet, and inventing them on a
+ * page whose entire pitch is trustworthiness would be self-defeating.
+ */
+export async function homeStats(): Promise<{
+  liveListings: number;
+  cities: number;
+  campuses: number;
+  ongroundAudited: number;
+  womenOnly: number;
+  fromRentMinor: number | null;
+  byType: Record<string, number>;
+}> {
+  const live = and(eq(properties.listingState, 'live'), isNull(properties.deletedAt));
+
+  const [[totals], [campusCount], typeRows, [cheapest]] = await Promise.all([
+    db
+      .select({
+        listings: sql<number>`count(*)::int`,
+        cities: sql<number>`count(distinct ${properties.city})::int`,
+        onground: sql<number>`count(*) FILTER (WHERE ${properties.verificationTier} = 'onground_audited')::int`,
+        womenOnly: sql<number>`count(*) FILTER (WHERE ${properties.genderPolicy} = 'female_only')::int`,
+      })
+      .from(properties)
+      .where(live),
+    db
+      .select({ value: sql<number>`count(*)::int` })
+      .from(institutions)
+      .where(eq(institutions.isPublished, true)),
+    db
+      .select({
+        propertyType: properties.propertyType,
+        value: sql<number>`count(*)::int`,
+      })
+      .from(properties)
+      .where(live)
+      .groupBy(properties.propertyType),
+    db
+      .select({ value: sql<number | null>`min(${roomTypes.rentAmountMinor})::int` })
+      .from(roomTypes)
+      .innerJoin(properties, eq(properties.id, roomTypes.propertyId))
+      .where(and(live, eq(roomTypes.isActive, true), isNull(roomTypes.deletedAt))),
+  ]);
+
+  return {
+    liveListings: totals?.listings ?? 0,
+    cities: totals?.cities ?? 0,
+    campuses: campusCount?.value ?? 0,
+    ongroundAudited: totals?.onground ?? 0,
+    womenOnly: totals?.womenOnly ?? 0,
+    fromRentMinor: cheapest?.value ?? null,
+    byType: Object.fromEntries(typeRows.map((r) => [r.propertyType, r.value])),
+  };
+}
+
 /** Slugs of every live listing, for the sitemap. */
 export async function listLiveListingSlugs(): Promise<
   { slug: string; updatedAt: Date }[]
