@@ -17,20 +17,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # The build needs a real database.
+    #
+    # `generateStaticParams` on /stays/[slug], /city/[slug] and /near/[slug]
+    # queries live inventory to decide what to prerender, so `next build`
+    # connects to Postgres. That is a genuine property of the deployment, not a
+    # CI quirk: any environment that builds this app needs DATABASE_URL to
+    # resolve.
+    #
+    # The alternative — having generateStaticParams swallow a connection error
+    # and return [] — was rejected. It would turn a loud build failure into a
+    # silent one that ships zero prerendered landing pages, which on an
+    # SEO-led funnel you would not notice until rankings dropped.
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hashtagstay_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      # Build-time env only.
-      #
-      # `clientEnv` in src/lib/env.ts is parsed eagerly, so `next build` fails
-      # without these two. They are deliberately fake: CI must never hold real
-      # project credentials, and nothing in the build talks to Supabase.
-      #
-      # Server env is parsed lazily via serverEnv(), so DATABASE_URL and friends
-      # are not needed to build. The values below exist only to satisfy schema
-      # validation if something evaluates it.
+      # Deliberately fake Supabase values: CI must never hold real project
+      # credentials, and nothing in the build talks to Supabase.
       NEXT_PUBLIC_SUPABASE_URL: https://example-ci.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hashtagstay_ci
+      DATABASE_URL_DIRECT: postgresql://postgres:postgres@localhost:5432/hashtagstay_ci
       AUTH_SECRET: ci-placeholder-secret-at-least-32-chars-long
       # Keep Next's telemetry out of CI logs.
       NEXT_TELEMETRY_DISABLED: '1'
@@ -63,8 +84,41 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Prepare the database the build reads from
+        # Seeded as well as migrated, so the build actually exercises static
+        # generation with real params instead of prerendering an empty set and
+        # passing vacuously.
+        run: |
+          npm run db:migrate
+          npm run db:seed
+
       - name: Build
         run: npm run build
+
+      - name: Assert the build prerendered the SEO landing pages
+        # The failure this guards against is silent: a build that connects but
+        # finds nothing still succeeds, shipping zero city, campus and listing
+        # pages on a funnel that depends entirely on them being indexed.
+        run: |
+          # Note the paths: the `(public)` route group does not appear in the
+          # build output, so these are /city/... not /(public)/city/...
+          missing=0
+          for path in \
+            ".next/server/app/city/bengaluru.html" \
+            ".next/server/app/near/iisc-bengaluru.html" \
+            ".next/server/app/stays/nest-malleswaram-sample.html"
+          do
+            if [ ! -f "$path" ]; then
+              echo "::error::expected prerendered page missing: $path"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "Prerendered output actually present:"
+            find .next/server/app -name '*.html' | head -40
+            exit 1
+          fi
+          echo "City, campus and listing pages were prerendered."
 
   migrations:
     name: migrations apply cleanly

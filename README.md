@@ -86,6 +86,20 @@ interchangeable:
   DDL and the advisory locks that serialise migrations do not work through the
   transaction pooler.
 
+## The build needs a database
+
+`next build` connects to Postgres. `generateStaticParams` on `/stays/[slug]`,
+`/city/[slug]` and `/near/[slug]` queries live inventory to decide what to
+prerender, so **`DATABASE_URL` must resolve in any environment that builds this
+app**, including CI and your deployment platform's build step.
+
+This is deliberate. The alternative — swallowing a connection error and
+returning no params — would turn a loud failure into a silent one that ships
+zero prerendered city, campus and listing pages. On a funnel that depends
+entirely on those being indexed, you would not notice until rankings dropped.
+CI additionally asserts that the landing pages were actually prerendered, since
+a build that connects but finds nothing still exits zero.
+
 ## Scripts
 
 | Command | Purpose |
