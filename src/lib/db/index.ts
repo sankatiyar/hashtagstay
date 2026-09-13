@@ -27,8 +27,11 @@ const connectionOptions: postgres.Options<Record<string, never>> = {
   // See note 1 above — do not remove.
   prepare: false,
   // Serverless invocations are short-lived and numerous; a small per-instance
-  // pool avoids starving the shared pooler.
-  max: 10,
+  // pool avoids starving the shared pooler. `next build` prerenders every
+  // listing from many worker processes at once, each with its own pool, so a
+  // build worker gets two connections: ~1,300 pages then share a couple of
+  // dozen connections instead of exhausting the database's client limit.
+  max: process.env.NEXT_PHASE === 'phase-production-build' ? 2 : 10,
   idle_timeout: 20,
   connect_timeout: 10,
   // Return DATE/TIMESTAMP as-is and let Drizzle own the mapping, so a column's
